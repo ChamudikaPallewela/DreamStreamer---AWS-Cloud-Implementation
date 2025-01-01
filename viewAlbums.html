@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DreamStreamer</title>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
+      rel="stylesheet" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #121212;
+        color: #e1e1e1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Sidebar styles */
+      nav.sidebar {
+        background-color: #1a1a1a;
+        width: 250px;
+        padding: 20px;
+        position: fixed;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border-right: 1px solid #333;
+      }
+
+      nav h2 {
+        font-weight: 600;
+        color: #00ffff;
+        margin-bottom: 30px;
+      }
+
+      nav ul {
+        list-style: none;
+        margin-top: 20px;
+      }
+
+      nav ul li {
+        margin-bottom: 15px;
+      }
+
+      nav ul li a {
+        text-decoration: none;
+        color: #b3b3b3;
+        font-size: 16px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        border-radius: 5px;
+        transition: background 0.3s, color 0.3s;
+      }
+
+      nav ul li a:hover {
+        background: #00ffff;
+        color: #fff;
+      }
+
+      nav ul li a i {
+        margin-right: 15px;
+        font-size: 18px;
+      }
+
+      nav .user-info {
+        margin-top: auto;
+        display: flex;
+        align-items: center;
+        color: #b3b3b3;
+      }
+
+      nav .user-info i {
+        font-size: 24px;
+        margin-right: 10px;
+      }
+
+      .main-content {
+        margin-left: 270px;
+        padding: 40px;
+        flex: 1;
+        background-color: #181818;
+      }
+
+      h1 {
+        font-weight: 600;
+        font-size: 28px;
+        margin-bottom: 25px;
+        color: #00ffff;
+      }
+
+      /* Filter section */
+      .filters {
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 20px;
+      }
+
+      .filters label {
+        font-weight: 500;
+        font-size: 14px;
+      }
+
+      .filters select,
+      .filters input {
+        background-color: #333;
+        color: #fff;
+        border: none;
+        padding: 10px 15px;
+        border-radius: 25px;
+        outline: none;
+      }
+
+      .filters button {
+        background-color: #00ffff;
+        color: #fff;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 25px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .filters button:hover {
+        background-color: #00ffff;
+      }
+
+      /* Table styles */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #242424;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      table,
+      th,
+      td {
+        border: none;
+      }
+
+      th,
+      td {
+        padding: 12px 15px;
+        text-align: left;
+        color: #b3b3b3;
+      }
+
+      th {
+        background-color: #333;
+        color: #fff;
+        font-size: 16px;
+      }
+
+      tr:nth-child(even) {
+        background-color: #2a2a2a;
+      }
+
+      tr:hover {
+        background-color: #333;
+      }
+
+      td img {
+        width: 80px;
+        border-radius: 8px;
+      }
+
+      @media only screen and (max-width: 768px) {
+        .main-content {
+          margin-left: 0;
+        }
+
+        nav.sidebar {
+          width: 100%;
+          height: auto;
+          position: static;
+        }
+
+        .filters {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="dashboard-container">
+        <nav class="sidebar">
+          <a href="user.html">
+            <img src="logo.png" alt="DreamStreamer Logo" style="width: 250px; height: auto;" />
+          </a>
+  
+          <ul>
+            <li>
+              <a href="user.html"><i class="fas fa-home"></i> Home</a>
+            </li>
+            <li>
+              <a href="viewAlbums.html" id="manageAlbums">
+                <i class="fas fa-music"></i> View Albums
+              </a>
+            </li>
+            <li>
+              <a href="analytics.html">
+                <i class="fas fa-chart-line"></i> Your Analytics
+              </a>
+            </li>
+            <li>
+              <a href="yourPurchase.html">
+                <i class="fas fa-shopping-basket"></i> View Purchase
+              </a>
+            </li>
+            <li>
+              <a href="favorites.html">
+                <i class="fas fa-heart"></i> Favorites
+              </a>
+            </li>
+            <li id="usernameDisplay" style="position: relative;">
+              <a href="#" id="username-link">
+                <i class="fas fa-user"></i> <span id="username"></span>
+              </a>
+              <div id="logoutDropdown" style="display: none; position: absolute; top: 100%; left: 0;">
+                <button id="logoutButton">Logout</button>
+              </div>
+            </li>
+          </ul>
+        </nav>
+  
+        <div class="main-content">
+      <h1>Music Catalog</h1>
+
+      <!-- Filters Section -->
+      <div class="filters">
+        <label for="genre">Genre:</label>
+        <select id="genre">
+          <option value="">All</option>
+          <option value="Metal">Metal</option>
+          <option value="Rock">Rock</option>
+          <option value="Pop">Pop</option>
+          <option value="Hip Hop">Hip Hop</option>
+          <option value="Reggae">Reggae</option>
+          <option value="Classical">Classical</option>
+        </select>
+
+        <label for="artist">Artist Name:</label>
+        <input type="text" id="artist" />
+
+        <label for="album">Album Title:</label>
+        <input type="text" id="album" />
+
+        <label for="track">Track Title:</label>
+        <input type="text" id="track" />
+
+        <button onclick="fetchData()">Search</button>
+      </div>
+
+      <!-- Albums Table -->
+      <table id="musicTable">
+        <thead>
+          <tr>
+            <th>Genre</th>
+            <th>Album</th>
+            <th>Year</th>
+            <th>Tracks</th>
+            <th>Track Titles</th>
+            <th>Artist</th>
+            <th>Band Composition</th>
+            <th>Album Art</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Data will be inserted here by JavaScript -->
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      async function fetchData() {
+        const genre = document.getElementById("genre").value;
+        const artist = document.getElementById("artist").value;
+        const album = document.getElementById("album").value;
+        const track = document.getElementById("track").value;
+       
+       // Check if user is authenticated by checking the localStorage
+       document.addEventListener("DOMContentLoaded", function () {
+          const rawUserInfo = localStorage.getItem(
+            "cognitoid"
+          );
+
+          if (!rawUserInfo) {
+            console.error("No user info found in localStorage.");
+            // Redirect to login page if user is not authenticated
+            window.location.href = "404.html";
+            return;
+          }
+
+          // Update the DOM element to display the username
+          const username = rawUserInfo;
+          const usernameElement = document.getElementById("username");
+
+          if (usernameElement) {
+            usernameElement.textContent = username;
+            console.log("Username displayed in DOM:", usernameElement.textContent);
+          } else {
+            console.error("Username element not found in the DOM.");
+          }
+        });
+
+
+
+
+        const queryParams = new URLSearchParams({
+          genre: genre || undefined,
+          artist: artist || undefined,
+          album: album || undefined,
+          track: track || undefined,
+        });
+
+        const apiUrl = `apiendpoint/a?${queryParams}`;
+
+        try {
+          const response = await fetch(apiUrl);
+          if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+          }
+
+          const data = await response.json();
+          console.log("Fetched Data:", data);
+
+          // Retrieve the raw string from local storage before fetching data
+  const rawUserInfo = localStorage.getItem(
+    "cognitoid"
+  );
+
+  if (!rawUserInfo) {
+    console.error("No user info found in localStorage.");
+    window.location.href = "login.html";
+    return;
+  }
+
+  const username = rawUserInfo ;
+
+  // Update the DOM element to display the username
+  const usernameElement = document.getElementById("username");
+  if (usernameElement) {
+    usernameElement.textContent = username; // Set the username
+    console.log("Username displayed in DOM:", usernameElement.textContent);
+  } else {
+    console.error("Username element not found in the DOM.");
+  }
+  
+          
+
+          const tableBody = document.querySelector("#musicTable tbody");
+          tableBody.innerHTML = "";
+
+          if (data.albums && data.albums.length > 0) {
+            data.albums.forEach((album) => {
+              const row = document.createElement("tr");
+
+              const trackTitles = album.tracks
+                .map((track) => track.title)
+                .join(", ");
+
+              row.innerHTML = `
+                    <td>${album.genre || "Unknown"}</td>
+                    <td>${album.title || "Unknown"}</td>
+                    <td>${album.year || "Unknown"}</td>
+                    <td>${album.tracks.length || 0}</td>
+                    <td>${trackTitles || "No tracks"}</td>
+                    <td>${album.artist || "Unknown"}</td>
+                    <td>${album.band_composition || "Unknown"}</td>
+                `;
+
+              // Create the album art cell and image element
+              const albumArtCell = document.createElement("td");
+              const imageElement = document.createElement("img");
+              imageElement.src = album.album_art_url || "#";
+              imageElement.alt = "Album Art";
+              imageElement.style.width = "100px"; // Styling for image
+              imageElement.style.cursor = "pointer"; // Make it clickable
+
+              // Add click event to the image
+              imageElement.onclick = () => {
+                logAlbumInteraction(album.album_id, album.title); // Log interaction by albumId and albumName
+
+                // Navigate to the albumTracks page with the album_id in the URL
+                window.location.href = `albumTracks.html?albumId=${album.album_id}`;
+              };
+
+              albumArtCell.appendChild(imageElement);
+              row.appendChild(albumArtCell);
+
+              // Append the row to the table body
+              tableBody.appendChild(row);
+            });
+          } else {
+            tableBody.innerHTML =
+              '<tr><td colspan="8">No results found</td></tr>';
+          }
+        } catch (error) {
+          console.error("Error fetching data:", error);
+          const tableBody = document.querySelector("#musicTable tbody");
+          tableBody.innerHTML =
+            '<tr><td colspan="8">Error fetching data. Please try again later.</td></tr>';
+        }
+      }
+
+      // Simulate logging the album interaction
+      function logAlbumInteraction(albumId, albumTitle) {
+        console.log(
+          `Album interaction logged: ID=${albumId}, Title=${albumTitle}`
+        );
+      }
+
+      // Automatically fetch data when the page loads
+      window.onload = fetchData;
+      // Toggle logout dropdown when clicking the username
+      const usernameLink = document.getElementById("username-link");
+      const logoutDropdown = document.getElementById("logoutDropdown");
+
+      usernameLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        logoutDropdown.style.display =
+          logoutDropdown.style.display === "block" ? "none" : "block";
+      });
+
+      // Logout functionality
+      const logoutButton = document.getElementById("logoutButton");
+      logoutButton.addEventListener("click", function () {
+        // Clear all local storage to log the user out completely
+        localStorage.clear();
+
+        // Redirect to login page
+        window.location.href = "login.html";
+      });
+    </script>
+  </body>
+</html>

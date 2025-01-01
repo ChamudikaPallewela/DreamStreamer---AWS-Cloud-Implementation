@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DreamStreamer - Admin Dashboard</title>
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #121212;
+      color: #e1e1e1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Sidebar styles */
+    nav.sidebar {
+      background-color: #1a1a1a;
+      width: 250px;
+      padding: 20px;
+      position: fixed;
+      height: 100vh;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-right: 1px solid #333;
+    }
+
+    nav h2 {
+      font-weight: 600;
+      color: #00ffff;
+      margin-bottom: 30px;
+    }
+
+    nav ul {
+      list-style: none;
+      margin-top: 20px;
+    }
+
+    nav ul li {
+      margin-bottom: 15px;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: #b3b3b3;
+      font-size: 16px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      border-radius: 5px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    nav ul li a:hover {
+      background: #00ffff;
+      color: #fff;
+    }
+
+    nav ul li a i {
+      margin-right: 15px;
+      font-size: 18px;
+    }
+
+    .main-content {
+      margin-left: 270px;
+      padding: 40px;
+      flex: 1;
+      background-color: #181818;
+    }
+
+    h1 {
+      font-weight: 600;
+      font-size: 28px;
+      margin-bottom: 25px;
+      color: #00ffff;
+    }
+
+    /* Modal styling */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: #333;
+      padding: 20px;
+      border-radius: 10px;
+      width: 400px;
+      max-width: 90%;
+      color: white;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #444;
+      padding-bottom: 10px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+    }
+
+    .modal-header .close {
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      margin-top: 20px;
+    }
+
+    .modal-body label {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .modal-body input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      background-color: #555;
+      border: none;
+      color: white;
+      border-radius: 5px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .modal-footer button {
+      background-color: #00ffff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .modal-footer button:hover {
+      background-color: #00cccc;
+    }
+
+    /* Table styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #242424;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table,
+    th,
+    td {
+      border: none;
+    }
+
+    th,
+    td {
+      padding: 12px 15px;
+      text-align: left;
+      color: #b3b3b3;
+    }
+
+    th {
+      background-color: #333;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #2a2a2a;
+    }
+
+    tr:hover {
+      background-color: #333;
+    }
+
+    @media only screen and (max-width: 768px) {
+      .main-content {
+        margin-left: 0;
+      }
+
+      nav.sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+      }
+    }
+    form {
+    background-color: #242424;
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #b3b3b3;
+}
+
+form input, form select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    background-color: #333;
+    border: none;
+    border-radius: 5px;
+    color: #e1e1e1;
+    font-size: 14px;
+}
+
+form input[type="file"] {
+    padding: 5px;
+}
+
+form button {
+    width: 100%;
+    background-color: #00ffff;
+    color: #121212;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+form button:hover {
+    background-color: #00cccc;
+}
+button {
+        background:linear-gradient(135deg, #00bcd4, #1de9b6);;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+
+      button:hover {
+        background-color: #21d1d1;
+      }
+
+  </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <a href="admin.html">
+                <img src="logo.png" alt="DreamStreamer Logo" style="width: 200px; height: auto;" />
+              </a>
+        
+            <ul>
+              <li><a href="admin.html"><i class="fas fa-home"></i> Home</a></li>
+              <li><a href="Genres.html" id="manageAlbums"><i class="fas fa-music"></i> Genres</a></li>
+              <li><a href="Artist.html"><i class="fas fa-user"></i> Artist</a></li>
+              <li><a href="Albums.html"><i class="fas fa-record-vinyl"></i> Albums</a></li>
+              <li><a href="Tracks.html"><i class="fas fa-headphones"></i> Tracks</a></li>
+              <li><a href="Adminstats.html"><i class="fas fa-chart-line"></i> Analytics</a></li>
+              <li><a href="#" class="nav-link" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+          </nav>
+
+        <div class="main-content">
+    <h1>Add New Album</h1>
+    <form id="addAlbumForm">
+        <label for="title">Album Title:</label>
+        <input type="text" id="title" required><br><br>
+
+        <label for="genre">Select Genre:</label>
+        <select id="genre" required>
+            <!-- Genres will be loaded dynamically -->
+        </select><br><br>
+
+        <label for="artists">Select Artists:</label>
+        <select id="artists" required>
+            <!-- Artists will be loaded dynamically -->
+        </select><br><br>
+
+        <label for="year">Album Year:</label>
+        <input type="number" id="year" required><br><br>
+
+        <label for="fileInput">Album Art:</label>
+        <input type="file" id="fileInput" accept="image/*" required><br><br>
+
+        <button type="submit">Add Album</button>
+    </form>
+
+    <img id="uploadedImage" style="display:none;" alt="Uploaded Album Art" />
+    <br>
+    <br>
+    <table id="albumTable" border="1">
+        <thead>
+            <tr>
+                <th>Album Title</th>
+                <th>Genre</th>
+                <th>Year</th>
+                <th>Artist</th>
+                <th>Album Art</th>
+                <th>Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Albums will be dynamically loaded here -->
+        </tbody>
+    </table>
+
+    <!-- Modal for updating album -->
+    <div id="updateModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Update Album</h2>
+                <span class="close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="updateForm">
+                    <input type="hidden" id="albumId" /> <!-- Hidden field for album_id -->
+                    
+                    <label for="updateTitle">Title:</label>
+                    <input type="text" id="updateTitle" /> <!-- Title input field -->
+                    
+                    <label for="updateGenre">Genre:</label>
+                    <input type="text" id="updateGenre" /> <!-- Genre input field -->
+                    
+                    <label for="updateYear">Year:</label>
+                    <input type="number" id="updateYear" /> <!-- Year input field -->
+                    
+                    <label for="artist_id">Artist:</label>
+                    <input type="text" id="artist_id" /> <!-- Artist ID input field -->
+                    
+                    <label for="album_art_url">Album Art URL:</label>
+                    <input type="text" id="album_art_url" /> <!-- Album Art URL input field -->
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="submit" form="updateForm">Update</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const lastAuthUser = localStorage.getItem('cognitoid') || 'guest';
+
+// Function to check access rights
+function checkAccess() {
+    // If the user is not 'admin', redirect to the 404 error page
+    if (lastAuthUser !== 'admin') {
+        window.location.href = '404.html';  // Redirect non-admin users
+    } else {
+        document.body.style.display = 'block';  // Show page for admin
+    }
+}
+document.getElementById('logoutBtn').addEventListener('click', function() {
+    // Clear all local storage items
+    localStorage.clear();
+    
+    // Optionally, redirect the user to a login page or home page
+    window.location.href = 'login.html'; // Replace 'login.html' with your actual login or home page
+});
+        const API_ENDPOINT = 'apiendpoint';
+        const S3_BUCKET = 'chamuawsfile';
+        const REGION = 'us-east-1';
+        // const ACCESS_KEY = use your key ;
+      // const SECRET_KEY = "add you key";
+        
+
+        AWS.config.update({
+            accessKeyId: ACCESS_KEY,
+            secretAccessKey: SECRET_KEY,
+            region: REGION
+        });
+
+        const s3 = new AWS.S3({
+            params: { Bucket: S3_BUCKET }
+        });
+
+        // Fetch genres and artists for the dropdowns
+        async function loadDropdownData() {
+            try {
+                const genres = await $.get(`apiendpoint/Albums`)
+                    .done(function(genres) {
+                        console.log('Genres:', genres);
+                    })
+                    .fail(function(error) {
+                        console.error("Error fetching genres:", error);
+                    });
+
+                const artists = await $.get(`apiendpoint/Artists`)
+                    .done(function(artists) {
+                        console.log('Artists:', artists);
+                    })
+                    .fail(function(error) {
+                        console.error("Error fetching artists:", error);
+                    });
+
+                // Populate genres dropdown
+                genres.forEach(genre => {
+                    $('#genre').append(`<option value="${genre.name}">${genre.name}</option>`);
+                });
+
+                // Populate artists dropdown
+                artists.forEach(artist => {
+                    $('#artists').append(`<option value="${artist.artist_id}">${artist.name}</option>`);
+                });
+            } catch (error) {
+                console.error("Error loading genres or artists:", error);
+            }
+        }
+
+        function uploadImage(file) {
+            const params = {
+                Bucket: S3_BUCKET,
+                Key: `album-art/${Date.now()}_${file.name}`,
+                Body: file,
+                ContentType: file.type
+            };
+
+            return new Promise((resolve, reject) => {
+                s3.upload(params, function(err, data) {
+                    if (err) {
+                        reject('Error uploading image: ' + err);
+                    } else {
+                        resolve(data.Location);  // Return the image URL
+                    }
+                });
+            });
+        }
+
+        $('#addAlbumForm').submit(async function(event) {
+            event.preventDefault();
+
+            const title = $('#title').val();
+            const genre = $('#genre').val();
+            const year = $('#year').val();
+            const artistIds = $('#artists').val(); // Array of artist IDs
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                alert('Please select an album art image.');
+                return;
+            }
+
+            try {
+                // Upload image to S3
+                const albumArtUrl = await uploadImage(file);
+
+                // Display uploaded image
+                $('#uploadedImage').attr('src', albumArtUrl).show();
+
+                // Save album details
+                const albumDetails = {
+                    title: title,
+                    genre: genre,
+                    year: year,
+                    artist_id: artistIds,  // Array of artist IDs (can handle multiple artists)
+                    album_art_url: albumArtUrl
+                };
+
+                $.ajax({
+                    url: `${API_ENDPOINT}/albums`,
+                    type: 'POST',
+                    data: JSON.stringify(albumDetails),
+                    contentType: 'application/json',
+                    success: function(response) {
+                        alert('Album added successfully!');
+                    },
+                    error: function(xhr, status, error) {
+                        const err = JSON.parse(xhr.responseText);
+                        alert('Error saving album: ' + err.message);
+                    }
+                });
+            } catch (err) {
+                alert(err);
+            }
+        });
+        // Fetch and display albums
+        function loadAlbums() {
+    $.get(`${API_ENDPOINT}/albums`, function(albums) {
+        console.log('Albums data:', albums);
+        
+        // Fetch artists data
+        $.get(`${API_ENDPOINT}/Artists`, function(artists) {
+            console.log('Artists data:', artists);
+            
+            const albumTable = $('#albumTable tbody');
+            albumTable.empty();
+
+            albums.forEach(album => {
+                // Find the artist name by matching artist_id with the fetched artists
+                const artist = artists.find(artist => artist.artist_id === album.artist_id);
+                const artistName = artist ? artist.name : 'Unknown Artist';  // Fallback if no match found
+
+                // Append the album row with artist name
+                albumTable.append(`
+                    <tr>
+                        <td>${album.title || 'No Title'}</td>
+                        <td>${album.genre}</td>
+                        <td>${album.year}</td>
+                        <td>${artistName}</td>  <!-- Display artist name -->
+                        <td><img src="${album.album_art_url}" width="100" /></td>
+                        <td>
+                            <button onclick="attemptDeleteAlbum('${album.album_id}')">Delete</button>
+                            <br>
+                            <br>
+                            <button onclick="showUpdateModal('${album.album_id}', '${album.title}', '${album.genre}', ${album.year}, '${album.artist_id}', '${album.album_art_url}')">Update</button>
+                        </td>
+                    </tr>
+                `);
+            });
+        }).fail(function(error) {
+            alert('Error fetching artists: ' + error.responseText);
+        });
+        
+    }).fail(function(error) {
+        alert('Error fetching albums: ' + error.responseText);
+    });
+}
+
+        // Attempt to delete an album
+        function attemptDeleteAlbum(albumId) {
+            checkTracks(albumId, function(canDelete) {
+                if (canDelete) {
+                    deleteAlbum(albumId);
+                } else {
+                    alert('This album has associated tracks and cannot be deleted.');
+                }
+            });
+        }
+
+        function checkTracks(albumId, callback) {
+            $.get(`${API_ENDPOINT}/tracks?album_id=${albumId}`, function(data) {
+                const tracksForAlbum = data.filter(track => track.album_id === albumId);
+                callback(tracksForAlbum.length === 0);
+            }).fail(function(error) {
+                alert('Error checking tracks: ' + error.responseText);
+                callback(false);
+            });
+        }
+
+        // Delete an album
+        function deleteAlbum(albumId) {
+            if (confirm('Are you sure you want to delete this album?')) {
+                $.ajax({
+                    url: `${API_ENDPOINT}/Albums`,
+                    type: 'DELETE',
+                    data: JSON.stringify({ album_id: albumId }),
+                    contentType: 'application/json',
+                    success: function(response) {
+                        alert('Album deleted successfully');
+                        loadAlbums();
+                    },
+                    error: function(xhr, status, error) {
+                        alert('Error deleting album: ' + xhr.responseText);
+                    }
+                });
+            }
+        }
+
+        // // Show the update modal with pre-filled data
+        // function showUpdateModal(albumId, title, genre, year, artistId, albumArtUrl) {
+        //     $('#albumId').val(albumId);
+        //     $('#title').val(title);
+        //     $('#genre').val(genre);
+        //     $('#year').val(year);
+        //     $('#artist_id').val(artistId);
+        //     $('#album_art_url').val(albumArtUrl);
+        //     $('#updateModal').show();
+        // }
+       // Function to show the modal and populate it with album details
+       let originalAlbumData = {};  // This will store the original album data
+
+       function showUpdateModal(albumId, title, genre, year, artistId, albumArtUrl) {
+    // Log the data for debugging
+    console.log("Opening modal for album:", {
+        albumId: albumId,
+        title: title,
+        genre: genre,
+        year: year,
+        artistId: artistId,
+        albumArtUrl: albumArtUrl
+    });
+
+    // Populate the form with the album data
+    $('#albumId').val(albumId);          // Hidden field for album ID
+    $('#updateTitle').val(title);        // Update title field
+    $('#updateGenre').val(genre);        // Update genre field
+    $('#updateYear').val(year);          // Update year field
+    $('#artist_id').val(artistId);       // Artist ID input field
+    $('#album_art_url').val(albumArtUrl); // Album Art URL input field
+
+    // Show the update modal
+    $('#updateModal').css('display', 'flex'); 
+}
+
+
+$('#updateForm').submit(async function(event) {
+    event.preventDefault();
+
+    const albumId = $('#albumId').val(); // Get the album ID
+    const title = $('#updateTitle').val(); // Change to unique ID
+    const genre = $('#updateGenre').val(); // Change to unique ID
+    const year = $('#updateYear').val(); // Change to unique ID
+    const artistId = $('#artist_id').val(); // Artist ID from the modal
+    const albumArtUrl = $('#album_art_url').val(); // Album Art URL from the modal
+
+    const updatedAlbumDetails = {
+        album_id: albumId,
+        title: title,
+        genre: genre,
+        year: year,
+        artist_id: artistId,
+        album_art_url: albumArtUrl
+    };
+
+    $.ajax({
+        url: `${API_ENDPOINT}/Albums`, // Ensure this is correct
+        type: 'PUT', // Use PUT for updates
+        data: JSON.stringify(updatedAlbumDetails),
+        contentType: 'application/json',
+        success: function(response) {
+            alert('Album updated successfully!');
+            loadAlbums(); // Reload albums after updating
+            $('#updateModal').hide(); // Hide the modal
+        },
+        error: function(xhr, status, error) {
+            const err = JSON.parse(xhr.responseText);
+            alert('Error updating album: ' + err.message);
+        }
+    });
+});
+
+
+
+        // Close modal when clicking on the "x" or outside the modal
+        $('.close').click(function() {
+            $('#updateModal').hide();
+        });
+
+        $(window).click(function(event) {
+            if ($(event.target).is('#updateModal')) {
+                $('#updateModal').hide();
+            }
+        });
+
+        // Load albums on page load
+        $(document).ready(function() {
+            checkAccess();
+            loadAlbums();
+            loadDropdownData();
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DreamStreamer - Admin Dashboard</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap"
+      rel="stylesheet" />
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #121212;
+        color: #e1e1e1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      nav.sidebar {
+        background-color: #1f1f1f;
+        width: 250px;
+        padding: 20px;
+        position: fixed;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        border-right: 1px solid #333;
+      }
+
+      nav h2 {
+        font-weight: 600;
+        color: #00ffff;
+      }
+
+      nav ul {
+        list-style: none;
+        margin-top: 50px;
+      }
+
+      nav ul li {
+        margin-bottom: 20px;
+      }
+
+      nav ul li a {
+        text-decoration: none;
+        color: #b3b3b3;
+        font-size: 18px;
+        padding: 10px 20px;
+        display: block;
+        border-radius: 5px;
+        transition: background 0.3s;
+      }
+
+      nav ul li a:hover {
+        background: #00ffff;
+        color: #fff;
+      }
+
+      .main-content {
+        margin-left: 270px;
+        padding: 30px;
+        flex: 1;
+        background-color: #181818;
+      }
+
+      h1 {
+        font-weight: 600;
+        font-size: 32px;
+        margin-bottom: 20px;
+        color: #00ffff;
+      }
+
+      button {
+        background-color: #37bcf1;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+
+      button:hover {
+        background-color: #21d1d1;
+      }
+
+      table {
+        width: 100%;
+        margin-top: 1.5rem;
+        border-collapse: collapse;
+      }
+
+      table,
+      th,
+      td {
+        border: 1px solid #404040;
+      }
+
+      th,
+      td {
+        padding: 1rem;
+        text-align: center;
+      }
+
+      th {
+        background-color: #282828;
+      }
+
+      img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+      }
+
+      /* Add Artist Modal */
+      #addArtistModal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #addArtistModal form {
+        background-color: #282828;
+        padding: 2rem;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 500px;
+      }
+
+      #addArtistModal input[type="text"],
+      #addArtistModal input[type="file"] {
+        width: 100%;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        border: none;
+        border-radius: 4px;
+        background-color: #404040;
+        color: white;
+      }
+
+      #addArtistModal button {
+        margin-right: 1rem;
+      }
+
+      /* Update Modal Styles */
+      #updateModal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.7);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      #updateModal form {
+        background-color: #282828;
+        padding: 2rem;
+        border-radius: 8px;
+        width: 100%;
+        max-width: 500px;
+      }
+
+      #updateModal button {
+        margin-right: 1rem;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      .modal-header h2 {
+        margin: 0;
+      }
+
+      .modal-header button {
+        background: none;
+        color: white;
+        font-size: 1.5rem;
+        border: none;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Left Sidebar -->
+    <nav class="sidebar">
+      <a href="admin.html">
+        <img
+          src="logo.png"
+          alt="DreamStreamer Logo"
+          style="width: 200px; height: auto" />
+      </a>
+
+      <ul>
+        <li>
+          <a href="admin.html"><i class="fas fa-home"></i> Home</a>
+        </li>
+        <li>
+          <a href="Genres.html" id="manageAlbums"
+            ><i class="fas fa-music"></i> Genres</a
+          >
+        </li>
+        <li>
+          <a href="Artist.html"><i class="fas fa-user"></i> Artist</a>
+        </li>
+        <li>
+          <a href="Albums.html"><i class="fas fa-record-vinyl"></i> Albums</a>
+        </li>
+        <li>
+          <a href="Tracks.html"><i class="fas fa-headphones"></i> Tracks</a>
+        </li>
+        <li>
+          <a href="Adminstats.html"
+            ><i class="fas fa-chart-line"></i> Analytics</a
+          >
+        </li>
+        <li>
+          <a href="#" class="nav-link" id="logoutBtn"
+            ><i class="fas fa-sign-out-alt"></i> Logout</a
+          >
+        </li>
+      </ul>
+    </nav>
+
+    <!-- Main Container -->
+    <div class="main-content">
+      <h1>Manage Artists</h1>
+      <br />
+      <button onclick="openAddArtistModal()">
+        <i class="fas fa-plus"></i> Add Artist
+      </button>
+      <br />
+      <br />
+      <h2>All Artists</h2>
+      <table id="artistTable">
+        <thead>
+          <tr>
+            <th>Artist Name</th>
+            <th>Band Composition</th>
+            <th>Image</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Artists will be dynamically added here -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Add Artist Modal -->
+    <div id="addArtistModal" style="display: none">
+      <form id="addArtistForm">
+        <div class="modal-header">
+          <h2>Add New Artist</h2>
+          <button type="button" onclick="closeAddArtistModal()">&times;</button>
+        </div>
+
+        <label for="artistName">Artist Name:</label>
+        <input type="text" id="artistName" required />
+
+        <label for="bandComposition">Band Composition:</label>
+        <input type="text" id="bandComposition" required />
+
+        <label for="fileInput">Artist Image:</label>
+        <input type="file" id="fileInput" accept="image/*" required />
+
+        <button type="submit"><i class="fas fa-plus"></i> Add Artist</button>
+        <button type="button" onclick="closeAddArtistModal()">Cancel</button>
+      </form>
+    </div>
+
+    <!-- Update Modal -->
+    <div id="updateModal" style="display: none">
+      <form id="updateArtistForm">
+        <input type="hidden" id="artistId" />
+        <div class="modal-header">
+          <h2>Update Artist</h2>
+          <button type="button" onclick="closeUpdateModal()">&times;</button>
+        </div>
+
+        <label for="updateArtistName">Artist Name:</label>
+        <input type="text" id="updateArtistName" required />
+
+        <label for="updateBandComposition">Band Composition:</label>
+        <input type="text" id="updateBandComposition" required />
+
+        <label for="updateFileInput">Artist Image:</label>
+        <input type="file" id="updateFileInput" accept="image/*" />
+
+        <button type="submit"><i class="fas fa-save"></i> Update Artist</button>
+        <button type="button" onclick="closeUpdateModal()">Cancel</button>
+      </form>
+    </div>
+
+    <script>
+      const S3_BUCKET = "chamuawsfile";
+      const REGION = "us-east-1";
+      const API_ENDPOINT = "apiendpoint"; // Replace with actual API endpoint
+      const lastAuthUser = localStorage.getItem("cognitoid") || "guest";
+
+      // Function to check access rights
+      function checkAccess() {
+        // If the user is not 'admin', redirect to the 404 error page
+        if (lastAuthUser !== "admin") {
+          window.location.href = "404.html"; // Redirect non-admin users
+        } else {
+          document.body.style.display = "block"; // Show page for admin
+        }
+      }
+      document
+        .getElementById("logoutBtn")
+        .addEventListener("click", function () {
+          // Clear all local storage items
+          localStorage.clear();
+
+          // Optionally, redirect the user to a login page or home page
+          window.location.href = "login.html"; // Replace 'login.html' with your actual login or home page
+        });
+
+      AWS.config.update({
+        // const ACCESS_KEY = use your key ;
+        // const SECRET_KEY = "add you key";
+        region: REGION,
+      });
+
+      const s3 = new AWS.S3({ params: { Bucket: S3_BUCKET } });
+
+      function uploadImage(file) {
+        const params = {
+          Bucket: S3_BUCKET,
+          Key: `artist-images/${Date.now()}_${file.name}`,
+          Body: file,
+          ContentType: file.type,
+        };
+
+        return new Promise((resolve, reject) => {
+          s3.upload(params, function (err, data) {
+            if (err) {
+              reject("Error uploading image: " + err);
+            } else {
+              resolve(data.Location);
+            }
+          });
+        });
+      }
+
+      function loadArtists() {
+        $.get(`${API_ENDPOINT}/artist`, function (data) {
+          const artists = data.Items || [];
+          const artistTable = $("#artistTable tbody");
+          artistTable.empty();
+
+          artists.forEach((artist) => {
+            artistTable.append(`
+                        <tr>
+                            <td>${artist.name || "No Name"}</td>
+                            <td>${artist.band_composition}</td>
+                            <td><img src="${artist.image_url}" /></td>
+                            <td>
+                                
+  <div style="display: flex; gap: 5px;">
+    <button style="font-size: 12px; padding: 5px 10px;" onclick="attemptDeleteArtist('${
+      artist.artist_id
+    }')">Delete</button>
+    <button style="font-size: 12px; padding: 5px 10px;" onclick="openUpdateModal('${
+      artist.artist_id
+    }', '${artist.name}', '${artist.band_composition}', '${
+              artist.image_url
+            }')">Update</button>
+  </div>
+</td>
+
+                            </td>
+                        </tr>
+                    `);
+          });
+        }).fail(function (error) {
+          alert("Error fetching artists: " + error.responseText);
+        });
+      }
+
+      function attemptDeleteArtist(artistId) {
+        checkAlbums(artistId, function (canDelete) {
+          if (canDelete) {
+            deleteArtist(artistId);
+          } else {
+            alert("This artist has associated albums and cannot be deleted.");
+          }
+        });
+      }
+
+      function checkAlbums(artistId, callback) {
+        $.get(`${API_ENDPOINT}/albums?artist_id=${artistId}`, function (data) {
+          const albumsForArtist = data.filter(
+            (album) => album.artist_id === artistId
+          );
+          callback(albumsForArtist.length === 0);
+        }).fail(function (error) {
+          alert("Error checking albums: " + error.responseText);
+          callback(false);
+        });
+      }
+
+      function deleteArtist(artistId) {
+        if (confirm("Are you sure you want to delete this artist?")) {
+          $.ajax({
+            url: `${API_ENDPOINT}/artist`,
+            type: "DELETE",
+            data: JSON.stringify({ artist_id: artistId }),
+            contentType: "application/json",
+            success: function () {
+              alert("Artist deleted successfully");
+              loadArtists();
+            },
+            error: function () {
+              alert("Error deleting artist.");
+            },
+          });
+        }
+      }
+
+      $("#addArtistForm").submit(async function (event) {
+        event.preventDefault();
+
+        const artistName = $("#artistName").val();
+        const bandComposition = $("#bandComposition").val();
+        const fileInput = document.getElementById("fileInput");
+        const file = fileInput.files[0];
+
+        if (!file) {
+          alert("Please select a file.");
+          return;
+        }
+
+        try {
+          const imageUrl = await uploadImage(file);
+
+          const artistDetails = {
+            name: artistName,
+            bandComposition: bandComposition,
+            imageUrl: imageUrl,
+          };
+
+          $.ajax({
+            url: `${API_ENDPOINT}/Artists`,
+            type: "POST",
+            data: JSON.stringify(artistDetails),
+            contentType: "application/json",
+            success: function () {
+              alert("Artist added successfully!");
+              loadArtists();
+              closeAddArtistModal();
+            },
+            error: function () {
+              alert("Error adding artist.");
+            },
+          });
+        } catch (err) {
+          alert(err);
+        }
+      });
+
+      function openAddArtistModal() {
+        $("#addArtistModal").show();
+      }
+
+      function closeAddArtistModal() {
+        $("#addArtistModal").hide();
+      }
+
+      function openUpdateModal(
+        artistId,
+        artistName,
+        bandComposition,
+        imageUrl
+      ) {
+        $("#artistId").val(artistId);
+        $("#updateArtistName").val(artistName);
+        $("#updateBandComposition").val(bandComposition);
+        $("#updateModal").show();
+      }
+
+      function closeUpdateModal() {
+        $("#updateModal").hide();
+      }
+
+      $("#updateArtistForm").submit(async function (event) {
+        event.preventDefault();
+
+        const artistId = $("#artistId").val();
+        const artistName = $("#updateArtistName").val();
+        const bandComposition = $("#updateBandComposition").val();
+        const fileInput = document.getElementById("updateFileInput");
+        const file = fileInput.files[0];
+
+        let imageUrl = null;
+        if (file) {
+          try {
+            imageUrl = await uploadImage(file);
+          } catch (err) {
+            alert(err);
+            return;
+          }
+        }
+
+        const updatedArtistDetails = {
+          artist_id: artistId,
+          name: artistName,
+          band_composition: bandComposition,
+          image_url: imageUrl || undefined,
+        };
+
+        $.ajax({
+          url: `${API_ENDPOINT}/artist`,
+          type: "PUT",
+          data: JSON.stringify(updatedArtistDetails),
+          contentType: "application/json",
+          success: function () {
+            alert("Artist updated successfully!");
+            $("#updateModal").hide();
+            loadArtists();
+          },
+          error: function () {
+            alert("Error updating artist.");
+          },
+        });
+      });
+
+      $(document).ready(function () {
+        loadArtists();
+        checkAccess();
+      });
+    </script>
+  </body>
+</html>

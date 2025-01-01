@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DreamStreamer</title>
+
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
+      rel="stylesheet" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #121212;
+        color: #fff;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      nav.sidebar {
+        background-color: #1c1c1c;
+        width: 250px;
+        padding: 20px;
+        position: fixed;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      nav h2 {
+        font-weight: 600;
+        color: #00ffff;
+        text-align: center;
+      }
+
+      nav ul {
+        list-style: none;
+        margin-top: 30px;
+      }
+
+      nav ul li {
+        margin-bottom: 20px;
+      }
+
+      nav ul li a {
+        text-decoration: none;
+        color: #b3b3b3;
+        font-size: 18px;
+        padding: 10px 20px;
+        display: block;
+        border-radius: 5px;
+        transition: background 0.3s;
+      }
+
+      nav ul li a:hover {
+        background: #282828;
+        color: #fff;
+      }
+
+      .main-content {
+        margin-left: 270px;
+        padding: 40px;
+        flex: 1;
+        background-color: #181818;
+      }
+
+      h1 {
+        font-weight: 600;
+        font-size: 32px;
+        margin-bottom: 20px;
+        color: #00ffff;
+      }
+
+      .tracks-container {
+        background: #1c1c1c;
+        padding: 20px;
+        border-radius: 10px;
+      }
+
+      .track-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #282828;
+      }
+
+      .track-item h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #fff;
+        flex: 1;
+      }
+
+      .audio-player {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 10px;
+      }
+
+      .audio-player button {
+        background-color: #11f0f0;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+      }
+
+      .audio-player button:hover {
+        background-color: #00ffff;
+      }
+
+      .progress-container {
+        flex: 1;
+        margin-left: 15px;
+        display: flex;
+        align-items: center;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 4px;
+        background-color: #404040;
+        border-radius: 2px;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+      }
+
+      .progress-bar div {
+        height: 100%;
+        width: 0;
+        background-color: #00ffff;
+        transition: width 0.1s;
+      }
+
+      .time {
+        margin-left: 15px;
+        font-size: 12px;
+        color: #999;
+      }
+
+      .purchase-button {
+        background-color: #00ffff;
+        border: none;
+        color: #000;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin-left: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .purchase-button:hover {
+        background-color: #00b2b2;
+      }
+
+      @media only screen and (max-width: 768px) {
+        .main-content {
+          margin-left: 0;
+        }
+
+        nav.sidebar {
+          width: 100%;
+          height: auto;
+          position: static;
+        }
+      }
+      .album-info {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 20px;
+      }
+
+      .album-info img {
+        max-width: 200px;
+        max-height: 200px;
+        margin-right: 20px; /* Adds space between image and details */
+        border-radius: 10px;
+      }
+
+      .album-details {
+        display: flex;
+        flex-direction: column; /* Stack details vertically */
+        justify-content: center;
+      }
+
+      .album-details h1 {
+        margin-bottom: 10px;
+        color: #00ffff;
+      }
+
+      .album-details p {
+        margin: 5px 0;
+      }
+      #logoutDropdown {
+        position: absolute;
+        display: none;
+        background-color: #1c1c1c;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+        right: 20px;
+        top: 50px;
+        padding: 10px;
+        border-radius: 5px;
+      }
+
+      #logoutDropdown button {
+        background: #00ffff;
+        border: none;
+        color: #000;
+        padding: 10px 20px;
+        text-align: center;
+        display: block;
+        width: 100%;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+      }
+
+      #logoutDropdown button:hover {
+        background: #00b2b2;
+      }
+      .heart-button {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        color: #b3b3b3;
+        font-size: 20px;
+        margin-left: 10px;
+        transition: color 0.3s;
+      }
+
+      .heart-button.liked {
+        color: #ff0000; /* Red when liked */
+      }
+
+      .heart-button:hover {
+        color: #ff0000;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="sidebar">
+      <a href="user.html">
+        <img
+          src="logo.png"
+          alt="DreamStreamer Logo"
+          style="width: 200px; height: auto" />
+      </a>
+
+      <ul>
+        <li>
+          <a href="user.html"><i class="fas fa-home"></i> Home</a>
+        </li>
+        <li>
+          <a href="viewAlbums.html" id="manageAlbums">
+            <i class="fas fa-music"></i> View Albums
+          </a>
+        </li>
+        <li>
+          <a href="analytics.html">
+            <i class="fas fa-chart-line"></i> Your Analytics
+          </a>
+        </li>
+        <li>
+          <a href="yourPurchase.html">
+            <i class="fas fa-shopping-basket"></i> View Purchase
+          </a>
+        </li>
+        <li>
+          <a href="favorites.html"> <i class="fas fa-heart"></i> Favorites </a>
+        </li>
+        <li id="usernameDisplay" style="position: relative">
+          <a href="#" id="username-link">
+            <i class="fas fa-user"></i> <span id="username"></span>
+          </a>
+          <div
+            id="logoutDropdown"
+            style="display: none; position: absolute; top: 100%; left: 0">
+            <button id="logoutButton">Logout</button>
+          </div>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="main-content">
+      <div class="album-info"></div>
+      <div class="tracks-container" id="tracksContainer"></div>
+    </div>
+
+    <script>
+      const API_ENDPOINT = "apiendpoint";
+
+      document.addEventListener("DOMContentLoaded", async function () {
+        const rawUserInfo = localStorage.getItem("cognitoid");
+        const username = rawUserInfo;
+
+        if (!username) {
+          window.location.href = "404.html"; // Redirect to login page if no user is found
+          return;
+        }
+
+        document.getElementById("username").textContent = username; // Set the username in the HTML
+
+        const albumId = getAlbumIdFromURL();
+        if (albumId) {
+          // Fetch tracks and favorites
+          const tracksResponse = await fetchTracks(albumId);
+          const favoritesResponse = await fetchFavorites(username);
+
+          // Display tracks and highlight favorites
+          displayTracks(tracksResponse, favoritesResponse);
+        }
+      });
+
+      function getAlbumIdFromURL() {
+        const params = new URLSearchParams(window.location.search);
+        return params.get("albumId");
+      }
+      function logTrackInteraction(trackId, trackName) {
+        const rawUserInfo = localStorage.getItem("cognitoid");
+        const username = rawUserInfo || "Admin";
+
+        const interactionData = {
+          trackId: trackId,
+          trackName: trackName,
+          username: username,
+          count: 1,
+        };
+
+        $.ajax({
+          url: `${API_ENDPOINT}/trackInteraction`,
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify(interactionData),
+          success: function (response) {
+            console.log("Track interaction logged:", response);
+          },
+          error: function (error) {
+            console.error("Error logging track interaction:", error);
+          },
+        });
+      }
+
+      function fetchTracks(albumId) {
+        $.ajax({
+          url: `${API_ENDPOINT}/tracks/${albumId}`,
+          type: "GET",
+          contentType: "application/json; charset=utf-8",
+          success: function (response) {
+            const tracks = response || [];
+            displayTracks(tracks);
+          },
+          error: function () {
+            alert("Error fetching track details");
+          },
+        });
+      }
+
+      function saveToFavorites(trackId, trackName) {
+        const rawUserInfo = localStorage.getItem("cognitoid");
+        const username = rawUserInfo || "Admin";
+
+        const favoriteData = {
+          track_id: trackId,
+          track_name: trackName,
+          username: username,
+        };
+
+        $.ajax({
+          url: `${API_ENDPOINT}/addFavorite`,
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify(favoriteData),
+          success: function (response) {
+            console.log("Track added to favorites:", response);
+            alert("Track added to favorites!");
+          },
+          error: function (error) {
+            console.error("Error adding track to favorites:", error);
+            alert("Error adding track to favorites");
+          },
+        });
+      }
+
+      function displayTracks(tracks, favorites) {
+        const tracksContainer = document.getElementById("tracksContainer");
+        tracksContainer.innerHTML = "";
+
+        if (!tracks || tracks.length === 0) {
+          tracksContainer.innerHTML = "<p>No tracks available.</p>";
+          return;
+        }
+
+        tracks.forEach((track) => {
+          const trackUrl = track.mp3_url || "No URL available";
+          const trackTitle = track.title || "No title available";
+
+          const trackDiv = document.createElement("div");
+          trackDiv.classList.add("track-item");
+
+          const trackName = document.createElement("h3");
+          trackName.innerText = trackTitle;
+          trackDiv.appendChild(trackName);
+
+          // Create custom audio player
+          const playerDiv = document.createElement("div");
+          playerDiv.classList.add("audio-player");
+
+          // Play/pause button
+          const playPauseButton = document.createElement("button");
+          playPauseButton.innerHTML = "&#9658;"; // Play icon
+          playerDiv.appendChild(playPauseButton);
+
+          // Progress bar
+          const progressContainer = document.createElement("div");
+          progressContainer.classList.add("progress-container");
+
+          const progressBar = document.createElement("div");
+          progressBar.classList.add("progress-bar");
+
+          const progress = document.createElement("div");
+          progressBar.appendChild(progress);
+          progressContainer.appendChild(progressBar);
+
+          playerDiv.appendChild(progressContainer);
+
+          const timeDisplay = document.createElement("span");
+          timeDisplay.classList.add("time");
+          timeDisplay.innerText = "0:00";
+          playerDiv.appendChild(timeDisplay);
+
+          trackDiv.appendChild(playerDiv);
+
+          // Heart button for adding to favorites
+          const heartButton = document.createElement("button");
+          heartButton.innerHTML = "&#10084;"; // Heart icon
+          heartButton.classList.add("heart-button");
+          trackDiv.appendChild(heartButton);
+
+          // Check if the track is already in the user's favorites
+          if (favorites.some((fav) => fav.track_id === track.track_id)) {
+            heartButton.classList.add("liked"); // Add liked style if already favorite
+            heartButton.disabled = true; // Disable button for already liked tracks
+          }
+
+          heartButton.addEventListener("click", function () {
+            saveToFavorites(track.track_id, track.title);
+            heartButton.disabled = true; // Disable the button after it's clicked
+            heartButton.classList.add("liked"); // Add liked style
+          });
+
+          // Purchase button
+          const purchaseButton = document.createElement("button");
+          purchaseButton.innerText = "Purchase";
+          purchaseButton.classList.add("purchase-button");
+          trackDiv.appendChild(purchaseButton);
+
+          tracksContainer.appendChild(trackDiv);
+
+          // Create audio player instance
+          const audioPlayer = new Audio(trackUrl);
+          let hasBeenPlayed = false;
+
+          playPauseButton.addEventListener("click", function () {
+            if (audioPlayer.paused) {
+              audioPlayer.play();
+              playPauseButton.innerHTML = "&#10073;&#10073;"; // Pause icon
+              if (!hasBeenPlayed) {
+                logTrackInteraction(track.track_id, track.title);
+                hasBeenPlayed = true;
+              }
+            } else {
+              audioPlayer.pause();
+              playPauseButton.innerHTML = "&#9658;"; // Play icon
+            }
+          });
+
+          audioPlayer.addEventListener("timeupdate", function () {
+            const progressPercent =
+              (audioPlayer.currentTime / audioPlayer.duration) * 100;
+            progress.style.width = `${progressPercent}%`;
+
+            const minutes = Math.floor(audioPlayer.currentTime / 60);
+            const seconds = Math.floor(audioPlayer.currentTime % 60)
+              .toString()
+              .padStart(2, "0");
+            timeDisplay.innerText = `${minutes}:${seconds}`;
+          });
+
+          progressBar.addEventListener("click", function (e) {
+            const clickPosition = e.offsetX / progressBar.offsetWidth;
+            const seekTime = clickPosition * audioPlayer.duration;
+            audioPlayer.currentTime = seekTime;
+          });
+
+          purchaseButton.addEventListener("click", function () {
+            const username = document.getElementById("username").textContent;
+
+            checkIfPurchased(track.track_id, username, function (hasPurchased) {
+              if (hasPurchased) {
+                const confirmRePurchase = confirm(
+                  "You have already purchased this track. Do you want to purchase it again?"
+                );
+                if (!confirmRePurchase) {
+                  return; // Exit the function if the user declines
+                }
+              }
+
+              // If user confirms re-purchase or hasn't purchased, proceed with purchase
+              const purchaseData = {
+                trackId: track.track_id,
+                trackName: track.title,
+                username: username,
+                date: new Date().toISOString(),
+                clickCount: 1,
+              };
+
+              $.ajax({
+                url: `${API_ENDPOINT}/purchase`,
+                type: "POST",
+                contentType: "application/json",
+                data: JSON.stringify(purchaseData),
+                success: function (response) {
+                  console.log("Purchase data logged:", response);
+                },
+                error: function (error) {
+                  console.error("Error logging purchase data:", error);
+                },
+              });
+            });
+          });
+        });
+      }
+
+      function checkIfPurchased(trackId, username, callback) {
+        const encodedUsername = encodeURIComponent(username);
+        const url = `${API_ENDPOINT}/userPurchaseInteraction?username=${encodedUsername}`;
+
+        $.ajax({
+          url: url,
+          type: "GET",
+          success: function (response) {
+            console.log("API response:", response); // Log the full response for debugging
+
+            if (Array.isArray(response)) {
+              // Check if the track_id exists in the response
+              const hasPurchased = response.some(
+                (purchase) => purchase.track_id === trackId
+              );
+              callback(hasPurchased); // Pass the result to the callback
+            } else {
+              console.error("Invalid response format or no tracks found");
+              callback(false);
+            }
+          },
+          error: function (error) {
+            console.error("Error checking purchase status:", error);
+            callback(false);
+          },
+        });
+      }
+      function fetchTracks(albumId) {
+        return $.ajax({
+          url: `${API_ENDPOINT}/tracks/${albumId}`,
+          type: "GET",
+          contentType: "application/json; charset=utf-8",
+          success: function (response) {
+            return response || [];
+          },
+          error: function () {
+            alert("Error fetching track details");
+            return [];
+          },
+        });
+      }
+
+      function fetchFavorites(username) {
+        return $.ajax({
+          url: `${API_ENDPOINT}/getFavorites?username=${username}`,
+          type: "GET",
+          contentType: "application/json",
+          success: function (response) {
+            return JSON.parse(response); // Parse the list of favorite tracks
+          },
+          error: function () {
+            console.error("Error fetching favorites");
+            return [];
+          },
+        });
+      }
+
+      const albumId = getAlbumIdFromURL();
+      console.log(albumId);
+      if (albumId) {
+        fetchTracks(albumId);
+      }
+      function fetchAlbumDetails(albumId) {
+        $.ajax({
+          url: `apiendpoint/a?albumId=${albumId}`,
+          type: "GET",
+          contentType: "application/json; charset=utf-8",
+          success: function (response) {
+            // Find the album with the matching albumId
+            const albumDetails = response.albums.find(
+              (album) => album.album_id === albumId
+            );
+
+            if (albumDetails) {
+              displayAlbumDetails(albumDetails);
+              fetchTracks(albumId); // Fetch the tracks after displaying album details
+            } else {
+              alert("Album not found");
+            }
+          },
+          error: function () {
+            alert("Error fetching album details");
+          },
+        });
+      }
+
+      function displayAlbumDetails(album) {
+        const mainContent = document.querySelector(".main-content");
+
+        // Create album details container
+        const albumInfoDiv = document.createElement("div");
+        albumInfoDiv.classList.add("album-info"); // Flex container for image and details
+
+        // Album image
+        const albumArt = document.createElement("img");
+        albumArt.src = album.album_art_url || "default-album-art.png"; // Provide a default if URL is missing
+        albumArt.alt = album.title || "Unknown Album";
+        albumArt.classList.add("album-art"); // Style the image
+
+        // Container for album text details
+        const albumDetailsDiv = document.createElement("div");
+        albumDetailsDiv.classList.add("album-details"); // Flex child for album details
+
+        const albumTitle = document.createElement("h1");
+        albumTitle.textContent = album.title || "Unknown Album";
+
+        const albumYear = document.createElement("p");
+        albumYear.textContent = `Released: ${album.year || "Unknown Year"}`;
+
+        const artistName = document.createElement("p");
+        artistName.textContent = `Artist: ${album.artist || "Unknown Artist"}`;
+
+        const bandComposition = document.createElement("p");
+        bandComposition.textContent = `Band Composition: ${
+          album.band_composition || "Unknown Band"
+        }`;
+
+        const trackLabel = document.createElement("p");
+        trackLabel.textContent = `Label: ${album.label || "Unknown Label"}`; // Add track label
+
+        const genre = document.createElement("p");
+        genre.textContent = `Genre: ${album.genre || "Unknown Genre"}`; // Add genre
+
+        // Append text details to the album details div
+        albumDetailsDiv.appendChild(albumTitle);
+        albumDetailsDiv.appendChild(albumYear);
+        albumDetailsDiv.appendChild(artistName);
+        albumDetailsDiv.appendChild(bandComposition);
+        //albumDetailsDiv.appendChild(trackLabel);  // Add track label
+        albumDetailsDiv.appendChild(genre); // Add genre
+
+        // Append album art and details to the album info container
+        albumInfoDiv.appendChild(albumArt);
+        albumInfoDiv.appendChild(albumDetailsDiv);
+
+        // Insert the album info at the top of the main content
+        mainContent.insertBefore(albumInfoDiv, mainContent.firstChild);
+      }
+
+      if (albumId) {
+        fetchAlbumDetails(albumId);
+      }
+      // Toggle logout dropdown when clicking the username
+      const usernameLink = document.getElementById("username-link");
+      const logoutDropdown = document.getElementById("logoutDropdown");
+
+      usernameLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        logoutDropdown.style.display =
+          logoutDropdown.style.display === "block" ? "none" : "block";
+      });
+
+      // Logout functionality
+      const logoutButton = document.getElementById("logoutButton");
+      logoutButton.addEventListener("click", function () {
+        // Clear all local storage to log the user out completely
+        localStorage.clear();
+
+        // Redirect to login page
+        window.location.href = "login.html";
+      });
+    </script>
+  </body>
+</html>

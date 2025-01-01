@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DreamStreamer - Admin Dashboard</title>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+      rel="stylesheet" />
+    <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      rel="stylesheet" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #121212;
+        color: #e1e1e1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Sidebar styles */
+      nav.sidebar {
+        background-color: #1a1a1a;
+        width: 250px;
+        padding: 20px;
+        position: fixed;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border-right: 1px solid #333;
+      }
+
+      nav h2 {
+        font-weight: 600;
+        color: #00ffff;
+        margin-bottom: 30px;
+      }
+
+      nav ul {
+        list-style: none;
+        margin-top: 20px;
+      }
+
+      nav ul li {
+        margin-bottom: 15px;
+      }
+
+      nav ul li a {
+        text-decoration: none;
+        color: #b3b3b3;
+        font-size: 16px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        border-radius: 5px;
+        transition: background 0.3s, color 0.3s;
+      }
+
+      nav ul li a:hover {
+        background: #00ffff;
+        color: #fff;
+      }
+
+      nav ul li a i {
+        margin-right: 15px;
+        font-size: 18px;
+      }
+
+      .main-content {
+        margin-left: 270px;
+        padding: 40px;
+        flex: 1;
+        background-color: #181818;
+      }
+
+      h1 {
+        font-weight: 600;
+        font-size: 28px;
+        margin-bottom: 25px;
+        color: #00ffff;
+      }
+
+      /* Modal styling */
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 1;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+      }
+
+      .modal-content {
+        background-color: #333;
+        padding: 20px;
+        border-radius: 10px;
+        width: 400px;
+        max-width: 90%;
+        color: white;
+      }
+
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid #444;
+        padding-bottom: 10px;
+      }
+
+      .modal-header h2 {
+        margin: 0;
+      }
+
+      .modal-header .close {
+        color: white;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .modal-body {
+        margin-top: 20px;
+      }
+
+      .modal-body label {
+        display: block;
+        margin-bottom: 10px;
+      }
+
+      .modal-body input {
+        width: 100%;
+        padding: 10px;
+        margin-bottom: 20px;
+        background-color: #555;
+        border: none;
+        color: white;
+        border-radius: 5px;
+      }
+
+      .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+      }
+
+      .modal-footer button {
+        background-color: #00ffff;
+        color: white;
+        border: none;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .modal-footer button:hover {
+        background-color: #00cccc;
+      }
+
+      /* Table styles */
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        background-color: #242424;
+        border-radius: 12px;
+        overflow: hidden;
+      }
+
+      table,
+      th,
+      td {
+        border: none;
+      }
+
+      th,
+      td {
+        padding: 12px 15px;
+        text-align: left;
+        color: #b3b3b3;
+      }
+
+      th {
+        background-color: #333;
+        color: #fff;
+        font-size: 16px;
+      }
+
+      tr:nth-child(even) {
+        background-color: #2a2a2a;
+      }
+
+      tr:hover {
+        background-color: #333;
+      }
+
+      @media only screen and (max-width: 768px) {
+        .main-content {
+          margin-left: 0;
+        }
+
+        nav.sidebar {
+          width: 100%;
+          height: auto;
+          position: static;
+        }
+      }
+      button {
+        background-color: #00ffffa9;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+
+      button:hover {
+        background-color: #21d1d1;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- Sidebar -->
+    <div class="dashboard-container">
+      <nav class="sidebar">
+        <a href="admin.html">
+          <img
+            src="logo.png"
+            alt="DreamStreamer Logo"
+            style="width: 200px; height: auto" />
+        </a>
+
+        <ul>
+          <li>
+            <a href="admin.html"><i class="fas fa-home"></i> Home</a>
+          </li>
+          <li>
+            <a href="Genres.html" id="manageAlbums"
+              ><i class="fas fa-music"></i> Genres</a
+            >
+          </li>
+          <li>
+            <a href="Artist.html"><i class="fas fa-user"></i> Artist</a>
+          </li>
+          <li>
+            <a href="Albums.html"><i class="fas fa-record-vinyl"></i> Albums</a>
+          </li>
+          <li>
+            <a href="Tracks.html"><i class="fas fa-headphones"></i> Tracks</a>
+          </li>
+          <li>
+            <a href="Adminstats.html"
+              ><i class="fas fa-chart-line"></i> Analytics</a
+            >
+          </li>
+          <li>
+            <a href="#" class="nav-link" id="logoutBtn"
+              ><i class="fas fa-sign-out-alt"></i> Logout</a
+            >
+          </li>
+        </ul>
+      </nav>
+
+      <div class="main-content">
+        <h1>Genre List</h1>
+        <br />
+
+        <button id="openModalBtn">Add New Genre</button>
+        <br />
+        <br />
+
+        <table border="1">
+          <thead>
+            <tr>
+              <th>Genre Name</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="genreList"></tbody>
+        </table>
+      </div>
+
+      <!-- Modal for Adding New Genre -->
+      <div id="addGenreModal" class="modal">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h2>Add New Genre</h2>
+            <span class="close">&times;</span>
+          </div>
+          <br />
+          <div class="modal-body">
+            <form id="addGenreForm">
+              <label for="genreName">Genre Name:</label>
+              <input type="text" id="genreName" required />
+            </form>
+          </div>
+          <div class="modal-footer">
+            <button id="addGenreBtn">Add Genre</button>
+          </div>
+        </div>
+      </div>
+
+      <script>
+        const API_ENDPOINT = "apiendpoint";
+        // Retrieve last authenticated user from local storage
+        const lastAuthUser = localStorage.getItem("cognitoid") || "guest";
+
+        // Function to check access rights
+        function checkAccess() {
+          // If the user is not 'admin', redirect to the 404 error page
+          if (lastAuthUser !== "admin") {
+            window.location.href = "404.html"; // Redirect non-admin users
+          } else {
+            document.body.style.display = "block"; // Show page for admin
+          }
+        }
+        document
+          .getElementById("logoutBtn")
+          .addEventListener("click", function () {
+            // Clear all local storage items
+            localStorage.clear();
+
+            // Optionally, redirect the user to a login page or home page
+            window.location.href = "login.html"; // Replace 'login.html' with your actual login or home page
+          });
+
+        // Open modal
+        const modal = document.getElementById("addGenreModal");
+        const openModalBtn = document.getElementById("openModalBtn");
+        const closeModalSpan = document.getElementsByClassName("close")[0];
+
+        openModalBtn.onclick = function () {
+          modal.style.display = "flex";
+        };
+
+        closeModalSpan.onclick = function () {
+          modal.style.display = "none";
+        };
+
+        window.onclick = function (event) {
+          if (event.target == modal) {
+            modal.style.display = "none";
+          }
+        };
+
+        // Add Genre
+        document
+          .getElementById("addGenreBtn")
+          .addEventListener("click", function () {
+            const genreName = document.getElementById("genreName").value;
+
+            $.ajax({
+              url: `${API_ENDPOINT}/Albums`,
+              type: "POST",
+              data: JSON.stringify({ name: genreName }),
+              contentType: "application/json",
+              success: function (response) {
+                alert("Genre added successfully: " + genreName);
+                modal.style.display = "none"; // Close modal on success
+                fetchGenres(); // Refresh the genre list
+              },
+              error: function (xhr, status, error) {
+                alert("Failed to add genre: " + genreName);
+              },
+            });
+          });
+
+        // Fetch All Genres and display in the table
+        function fetchGenres() {
+          $.ajax({
+            url: `${API_ENDPOINT}/Albums`,
+            type: "GET",
+            success: function (response) {
+              const genreList = $("#genreList");
+              genreList.empty(); // Clear the table before appending
+
+              response.forEach(function (genre) {
+                genreList.append(`
+                             <tr>
+                <td>${genre.name}</td>
+                <td><button class="delete-btn" onclick="attemptDeleteGenre('${genre.name}')">Delete</button></td>
+              </tr>`);
+              });
+            },
+            error: function (xhr, status, error) {
+              alert("Failed to fetch genres");
+            },
+          });
+        }
+        // Attempt to delete a genre
+        function attemptDeleteGenre(genreName) {
+          checkAlbums(genreName, function (canDelete) {
+            if (canDelete) {
+              deleteGenre(genreName);
+            } else {
+              alert(
+                `Cannot delete genre "${genreName}" as it has associated albums.`
+              );
+            }
+          });
+        }
+
+        // Check if there are any albums associated with the genre
+        function checkAlbums(genreName, callback) {
+          $.get(`${API_ENDPOINT}/Genres?genre=${genreName}`, function (data) {
+            if (data.length > 0) {
+              callback(false);
+            } else {
+              callback(true);
+            }
+          }).fail(function (error) {
+            alert("Error checking albums: " + error.responseText);
+            callback(false); // Error in checking, do not delete
+          });
+        }
+
+        // Delete a genre
+        function deleteGenre(genreName) {
+          if (
+            confirm(`Are you sure you want to delete the genre "${genreName}"?`)
+          ) {
+            $.ajax({
+              url: `${API_ENDPOINT}/Genres`,
+              type: "DELETE",
+              data: JSON.stringify({ name: genreName }),
+              contentType: "application/json",
+              success: function (response) {
+                alert("Genre deleted successfully");
+                fetchGenres(); // Refresh the genre list
+              },
+              error: function (xhr, status, error) {
+                alert("Error deleting genre: " + xhr.responseText);
+              },
+            });
+          }
+        }
+
+        // Load genres on page load
+        $(document).ready(function () {
+          checkAccess();
+          fetchGenres();
+        });
+      </script>
+    </div>
+  </body>
+</html>

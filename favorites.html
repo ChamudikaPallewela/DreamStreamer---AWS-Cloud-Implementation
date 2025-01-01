@@ -1,0 +1,517 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DreamStreamer</title>
+
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
+      rel="stylesheet" />
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #121212;
+        color: #fff;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      nav.sidebar {
+        background-color: #1c1c1c;
+        width: 250px;
+        padding: 20px;
+        position: fixed;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+      }
+
+      nav h2 {
+        font-weight: 600;
+        color: #00ffff;
+        text-align: center;
+      }
+
+      nav ul {
+        list-style: none;
+        margin-top: 30px;
+      }
+
+      nav ul li {
+        margin-bottom: 20px;
+      }
+
+      nav ul li a {
+        text-decoration: none;
+        color: #b3b3b3;
+        font-size: 18px;
+        padding: 10px 20px;
+        display: block;
+        border-radius: 5px;
+        transition: background 0.3s;
+      }
+
+      nav ul li a:hover {
+        background: #282828;
+        color: #fff;
+      }
+
+      .main-content {
+        margin-left: 270px;
+        padding: 40px;
+        flex: 1;
+        background-color: #181818;
+      }
+
+      h1 {
+        font-weight: 600;
+        font-size: 32px;
+        margin-bottom: 20px;
+        color: #00ffff;
+      }
+
+      .tracks-container {
+        background: #1c1c1c;
+        padding: 20px;
+        border-radius: 10px;
+      }
+
+      .track-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 10px;
+        border-bottom: 1px solid #282828;
+      }
+
+      .track-item h3 {
+        margin: 0;
+        font-size: 18px;
+        color: #fff;
+        flex: 1;
+      }
+
+      .audio-player {
+        display: flex;
+        align-items: center;
+        width: 100%;
+        padding: 10px;
+      }
+
+      .audio-player button {
+        background-color: #11f0f0;
+        border: none;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 18px;
+      }
+
+      .audio-player button:hover {
+        background-color: #00ffff;
+      }
+
+      .progress-container {
+        flex: 1;
+        margin-left: 15px;
+        display: flex;
+        align-items: center;
+      }
+
+      .progress-bar {
+        width: 100%;
+        height: 4px;
+        background-color: #404040;
+        border-radius: 2px;
+        overflow: hidden;
+        position: relative;
+        cursor: pointer;
+      }
+
+      .progress-bar div {
+        height: 100%;
+        width: 0;
+        background-color: #00ffff;
+        transition: width 0.1s;
+      }
+
+      .time {
+        margin-left: 15px;
+        font-size: 12px;
+        color: #999;
+      }
+
+      .purchase-button {
+        background-color: #00ffff;
+        border: none;
+        color: #000;
+        padding: 10px 20px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 16px;
+        margin-left: 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+      }
+
+      .purchase-button:hover {
+        background-color: #00b2b2;
+      }
+
+      @media only screen and (max-width: 768px) {
+        .main-content {
+          margin-left: 0;
+        }
+
+        nav.sidebar {
+          width: 100%;
+          height: auto;
+          position: static;
+        }
+      }
+      .album-info {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 20px;
+      }
+
+      .album-info img {
+        max-width: 200px;
+        max-height: 200px;
+        margin-right: 20px; /* Adds space between image and details */
+        border-radius: 10px;
+      }
+
+      .album-details {
+        display: flex;
+        flex-direction: column; /* Stack details vertically */
+        justify-content: center;
+      }
+
+      .album-details h1 {
+        margin-bottom: 10px;
+        color: #00ffff;
+      }
+
+      .album-details p {
+        margin: 5px 0;
+      }
+      #logoutDropdown {
+        position: absolute;
+        display: none;
+        background-color: #1c1c1c;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+        z-index: 1;
+        right: 20px;
+        top: 50px;
+        padding: 10px;
+        border-radius: 5px;
+      }
+
+      #logoutDropdown button {
+        background: #00ffff;
+        border: none;
+        color: #000;
+        padding: 10px 20px;
+        text-align: center;
+        display: block;
+        width: 100%;
+        cursor: pointer;
+        border-radius: 5px;
+        transition: background-color 0.3s;
+      }
+
+      #logoutDropdown button:hover {
+        background: #00b2b2;
+      }
+      .heart-button {
+        background-color: transparent;
+        border: none;
+        cursor: pointer;
+        color: #b3b3b3;
+        font-size: 20px;
+        margin-left: 10px;
+        transition: color 0.3s;
+      }
+
+      .heart-button.liked {
+        color: #ff0000; /* Red when liked */
+      }
+
+      .heart-button:hover {
+        color: #ff0000;
+      }
+    </style>
+  </head>
+  <body>
+    <nav class="sidebar">
+      <a href="user.html">
+        <img
+          src="logo.png"
+          alt="DreamStreamer Logo"
+          style="width: 200px; height: auto" />
+      </a>
+
+      <ul>
+        <li>
+          <a href="user.html"><i class="fas fa-home"></i> Home</a>
+        </li>
+        <li>
+          <a href="viewAlbums.html" id="manageAlbums">
+            <i class="fas fa-music"></i> View Albums
+          </a>
+        </li>
+        <li>
+          <a href="analytics.html">
+            <i class="fas fa-chart-line"></i> Your Analytics
+          </a>
+        </li>
+        <li>
+          <a href="yourPurchase.html">
+            <i class="fas fa-shopping-basket"></i> View Purchase
+          </a>
+        </li>
+        <li>
+          <a href="favorites.html"> <i class="fas fa-heart"></i> Favorites </a>
+        </li>
+        <li id="usernameDisplay" style="position: relative">
+          <a href="#" id="username-link">
+            <i class="fas fa-user"></i> <span id="username"></span>
+          </a>
+          <div
+            id="logoutDropdown"
+            style="display: none; position: absolute; top: 100%; left: 0">
+            <button id="logoutButton">Logout</button>
+          </div>
+        </li>
+      </ul>
+    </nav>
+
+    <div class="main-content">
+      <h1>Your Favorite Tracks</h1>
+      <div id="favoritesContainer"></div>
+    </div>
+
+    <script>
+      const API_ENDPOINT = "apiendpoint";
+
+      document.addEventListener("DOMContentLoaded", async function () {
+        const rawUserInfo = localStorage.getItem("cognitoid");
+        const username = rawUserInfo;
+
+        if (!username) {
+          window.location.href = "404.html"; // Redirect to login page if no user is found
+          return;
+        }
+
+        document.getElementById("username").textContent = username; // Set the username in the HTML
+
+        const favorites = await fetchFavorites(username);
+        await displayFavorites(favorites);
+      });
+      function logTrackInteraction(trackId, trackName) {
+        const rawUserInfo = localStorage.getItem("cognitoid");
+        const username = rawUserInfo;
+
+        const interactionData = {
+          trackId: trackId,
+          trackName: trackName,
+          username: username,
+          count: 1,
+        };
+
+        $.ajax({
+          url: `${API_ENDPOINT}/trackInteraction`,
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify(interactionData),
+          success: function (response) {
+            console.log("Track interaction logged:", response);
+          },
+          error: function (error) {
+            console.error("Error logging track interaction:", error);
+          },
+        });
+      }
+
+      // Fetches the list of favorite tracks for the user
+      function fetchFavorites(username) {
+        return $.ajax({
+          url: `${API_ENDPOINT}/getFavorites?username=${encodeURIComponent(
+            username
+          )}`,
+          type: "GET",
+          contentType: "application/json",
+          success: function (response) {
+            return response;
+          },
+          error: function () {
+            console.error("Error fetching favorites");
+            return [];
+          },
+        });
+      }
+
+      // Fetches the URL of a track using the track_id
+      async function fetchTrackUrl(trackId) {
+        try {
+          const response = await $.ajax({
+            url: `${API_ENDPOINT}/getTrackUrl?track_id=${encodeURIComponent(
+              trackId
+            )}`,
+            type: "GET",
+            contentType: "application/json",
+          });
+
+          if (response && response.mp3_url && response.mp3_url.length > 0) {
+            return response.mp3_url[0]; // Return the first URL from the mp3_url array
+          } else {
+            console.error(`Invalid response format for track ID: ${trackId}`);
+            return null;
+          }
+        } catch (error) {
+          console.error(`Error fetching URL for track ${trackId}`);
+          return null;
+        }
+      }
+
+      // Displays the favorite tracks on the page and adds custom audio players
+      async function displayFavorites(favorites) {
+        const favoritesContainer =
+          document.getElementById("favoritesContainer");
+        favoritesContainer.innerHTML = "";
+
+        if (!favorites || favorites.length === 0) {
+          favoritesContainer.innerHTML =
+            "<p>You have no favorite tracks yet.</p>";
+          return;
+        }
+
+        // Loop through favorites and fetch the track URL for each one
+        for (let favorite of favorites) {
+          const trackUrl = await fetchTrackUrl(favorite.track_id);
+          if (trackUrl) {
+            const favoriteDiv = document.createElement("div");
+            favoriteDiv.classList.add("favorite-track");
+
+            // Track Name (Remove Track ID display)
+            const trackName = document.createElement("h3");
+            trackName.innerText = favorite.track_name || "Unknown Track";
+            favoriteDiv.appendChild(trackName);
+
+            // Custom audio player
+            const playerDiv = document.createElement("div");
+            playerDiv.classList.add("audio-player");
+
+            // Play/pause button
+            const playPauseButton = document.createElement("button");
+            playPauseButton.innerHTML = "&#9658;"; // Play icon
+            playerDiv.appendChild(playPauseButton);
+
+            // Progress bar
+            const progressContainer = document.createElement("div");
+            progressContainer.classList.add("progress-container");
+
+            const progressBar = document.createElement("div");
+            progressBar.classList.add("progress-bar");
+
+            progressContainer.appendChild(progressBar);
+            playerDiv.appendChild(progressContainer);
+
+            // Time display
+            const timeDisplay = document.createElement("span");
+            timeDisplay.classList.add("time");
+            timeDisplay.innerText = "0:00";
+            playerDiv.appendChild(timeDisplay);
+
+            favoriteDiv.appendChild(playerDiv);
+            favoritesContainer.appendChild(favoriteDiv);
+
+            // Create audio player instance
+            const audioPlayer = new Audio(trackUrl);
+            let hasBeenPlayed = false;
+
+            // Play/Pause Button functionality
+            playPauseButton.addEventListener("click", function () {
+              if (audioPlayer.paused) {
+                audioPlayer.play();
+                playPauseButton.innerHTML = "&#10073;&#10073;"; // Pause icon
+                if (!hasBeenPlayed) {
+                  logTrackInteraction(favorite.track_id, favorite.track_name);
+                  hasBeenPlayed = true;
+                }
+              } else {
+                audioPlayer.pause();
+                playPauseButton.innerHTML = "&#9658;"; // Play icon
+              }
+            });
+
+            // Update progress bar and time display as track plays
+            audioPlayer.addEventListener("timeupdate", function () {
+              const progressPercent =
+                (audioPlayer.currentTime / audioPlayer.duration) * 100;
+              progressBar.style.width = `${progressPercent}%`;
+
+              const minutes = Math.floor(audioPlayer.currentTime / 60);
+              const seconds = Math.floor(audioPlayer.currentTime % 60)
+                .toString()
+                .padStart(2, "0");
+              timeDisplay.innerText = `${minutes}:${seconds}`;
+            });
+
+            // Seek functionality for progress bar
+            progressContainer.addEventListener("click", function (e) {
+              const clickPosition = e.offsetX / progressContainer.offsetWidth;
+              const seekTime = clickPosition * audioPlayer.duration;
+              audioPlayer.currentTime = seekTime;
+            });
+          } else {
+            console.error(`No URL found for track ${favorite.track_id}`);
+          }
+        }
+      }
+      // Toggle logout dropdown when clicking the username
+      const usernameLink = document.getElementById("username-link");
+      const logoutDropdown = document.getElementById("logoutDropdown");
+
+      usernameLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        logoutDropdown.style.display =
+          logoutDropdown.style.display === "block" ? "none" : "block";
+      });
+
+      // Logout functionality
+      const logoutButton = document.getElementById("logoutButton");
+      logoutButton.addEventListener("click", function () {
+        // Clear all local storage to log the user out completely
+        localStorage.clear();
+
+        // Redirect to login page
+        window.location.href = "Index.html";
+      });
+    </script>
+  </body>
+</html>

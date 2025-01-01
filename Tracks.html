@@ -1,0 +1,791 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>DreamStreamer - Admin Dashboard</title>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+    <style>
+      * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #121212;
+      color: #e1e1e1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Sidebar styles */
+    nav.sidebar {
+      background-color: #1a1a1a;
+      width: 250px;
+      padding: 20px;
+      position: fixed;
+      height: 100vh;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-right: 1px solid #333;
+    }
+
+    nav h2 {
+      font-weight: 600;
+      color: #00ffff;
+      margin-bottom: 30px;
+    }
+
+    nav ul {
+      list-style: none;
+      margin-top: 20px;
+    }
+
+    nav ul li {
+      margin-bottom: 15px;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: #b3b3b3;
+      font-size: 16px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      border-radius: 5px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    nav ul li a:hover {
+      background: #00ffff;
+      color: #fff;
+    }
+
+    nav ul li a i {
+      margin-right: 15px;
+      font-size: 18px;
+    }
+
+    .main-content {
+      margin-left: 270px;
+      padding: 40px;
+      flex: 1;
+      background-color: #181818;
+    }
+
+    h1 {
+      font-weight: 600;
+      font-size: 28px;
+      margin-bottom: 25px;
+      color: #00ffff;
+    }
+    button {
+            background-color: #00ffffa9;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background-color: #21d1d1;
+        }
+
+    /* Modal styling */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: #333;
+      padding: 20px;
+      border-radius: 10px;
+      width: 400px;
+      max-width: 90%;
+      color: white;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #444;
+      padding-bottom: 10px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+    }
+
+    .modal-header .close {
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      margin-top: 20px;
+    }
+
+    .modal-body label {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .modal-body input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      background-color: #555;
+      border: none;
+      color: white;
+      border-radius: 5px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .modal-footer button {
+      background-color: #00ffff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .modal-footer button:hover {
+      background-color: #00cccc;
+    }
+
+    /* Table styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #242424;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table,
+    th,
+    td {
+      border: none;
+    }
+
+    th,
+    td {
+      padding: 12px 15px;
+      text-align: left;
+      color: #b3b3b3;
+    }
+
+    th {
+      background-color: #333;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #2a2a2a;
+    }
+
+    tr:hover {
+      background-color: #333;
+    }
+
+    @media only screen and (max-width: 768px) {
+      .main-content {
+        margin-left: 0;
+      }
+
+      nav.sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+      }
+    }
+  </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="dashboard-container">
+        <nav class="sidebar">
+          <a href="admin.html">
+            <img src="logo.png" alt="DreamStreamer Logo" style="width: 200px; height: auto;" />
+          </a>
+    
+      
+          <ul>
+            <li><a href="admin.html"><i class="fas fa-home"></i> Home</a></li>
+            <li><a href="Genres.html" id="manageAlbums"><i class="fas fa-music"></i> Genres</a></li>
+            <li><a href="Artist.html"><i class="fas fa-user"></i> Artist</a></li>
+            <li><a href="Albums.html"><i class="fas fa-record-vinyl"></i> Albums</a></li>
+            <li><a href="Tracks.html"><i class="fas fa-headphones"></i> Tracks</a></li>
+            <li><a href="Adminstats.html"><i class="fas fa-chart-line"></i> Analytics</a></li>
+            <li><a href="#" class="nav-link" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+          </ul>
+        </nav>
+
+        <div class="main-content">
+    <h1>Manage Tracks</h1>
+    
+
+    <!-- Button to Open Add Track Modal -->
+    <button id="openAddModal">Add Track</button>
+    <br>
+    <br>
+
+    <div id="tracksContainer">
+      <!-- Tracks table will be loaded here dynamically -->
+      <table id="tracksTable">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Album</th>
+            <th>Track Number</th>
+            <th>Label</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Track rows will be dynamically inserted here -->
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Add Track Modal -->
+    <div id="addTrackModal" class="modal">
+      <div class="modal-content">
+        <span class="close" id="closeAddModal">&times;</span>
+        <h2>Add New Track</h2>
+        <form id="addTrackForm">
+          <label for="title">Track Title:</label>
+          <input type="text" id="title" required /><br /><br />
+
+          <label for="album">Select Album:</label>
+          <select id="album" required>
+            <!-- Albums will be loaded dynamically --></select
+          ><br /><br />
+
+          <label for="track_number">Track Number:</label>
+          <input type="number" id="track_number" required /><br /><br />
+
+          <label for="label">Track Label:</label>
+          <input type="text" id="label" required /><br /><br />
+
+          <!-- Upload MP3s Button and Display Container -->
+          <label for="mp3FileInput">Upload MP3s:</label>
+          <input
+            type="file"
+            id="mp3FileInput"
+            accept="audio/mpeg"
+            multiple /><br /><br />
+
+          <!-- Corrected button ID -->
+          <button type="button" id="uploadMp3Button">Upload MP3s</button>
+          <button type="submit">Add Track</button>
+          <div id="uploadedMp3Container"></div>
+          <!-- Container for displaying uploaded MP3s -->
+        </form>
+      </div>
+    </div>
+
+    <!-- Update Track Modal -->
+    <div id="updateTrackModal" class="modal">
+      <div class="modal-content">
+        <span class="close" id="closeUpdateModal">&times;</span>
+        <h2>Update Track</h2>
+        <form id="updateTrackForm">
+          <input type="hidden" id="updateTrackId" />
+
+          <label for="updateTitle">Track Title:</label>
+          <input type="text" id="updateTitle" required /><br /><br />
+
+          <label for="updateAlbum">Select Album:</label>
+          <select id="updateAlbum"></select
+          ><br /><br />
+
+          <label for="updateTrackNumber">Track Number:</label>
+          <input type="number" id="updateTrackNumber" required /><br /><br />
+
+          <label for="updateLabel">Track Label:</label>
+          <input type="text" id="updateLabel" required /><br /><br />
+
+          <label for="updateMp3FileInput">Upload MP3s:</label>
+          <input
+            type="file"
+            id="updateMp3FileInput"
+            accept="audio/mpeg"
+            multiple /><br /><br />
+
+          <button type="button" id="uploadUpdateMp3Button">Upload MP3s</button>
+          <button type="submit">Update Track</button>
+        </form>
+      </div>
+    </div>
+
+    <div id="uploadedMp3Container"></div>
+
+    <script>
+      const S3_BUCKET = "chamuawsfile";
+      const REGION = "us-east-1";
+      // const ACCESS_KEY = use your key ;
+      // const SECRET_KEY = "add you key";
+      const API_ENDPOINT =
+        "apiendpoint";
+
+
+        const lastAuthUser = localStorage.getItem('cognitoid') || 'guest';
+
+// Function to check access rights
+function checkAccess() {
+    // If the user is not 'admin', redirect to the 404 error page
+    if (lastAuthUser !== 'admin') {
+        window.location.href = '404.html';  // Redirect non-admin users
+    } else {
+        document.body.style.display = 'block';  // Show page for admin
+    }
+}
+
+      let albumMap = {};
+
+      AWS.config.update({
+        accessKeyId: ACCESS_KEY,
+        secretAccessKey: SECRET_KEY,
+        region: REGION,
+      });
+
+      const s3 = new AWS.S3({
+        params: { Bucket: S3_BUCKET },
+      });
+
+      // Upload MP3s to S3 and display the uploaded files
+      function uploadMp3() {
+        const fileInput = document.getElementById("mp3FileInput");
+        const files = fileInput.files;
+
+        if (files.length === 0) {
+          alert("Please select MP3 files.");
+          return;
+        }
+
+        const uploadPromises = Array.from(files).map((file) => {
+          if (file.type !== "audio/mpeg") {
+            alert("One or more files are not MP3 format.");
+            return Promise.reject("Invalid file type");
+          }
+
+          const s3Key = `uploads/mp3/${Date.now()}_${file.name}`;
+          const params = {
+            Bucket: S3_BUCKET,
+            Key: s3Key,
+            Body: file,
+            ContentType: "audio/mpeg",
+          };
+
+          return new Promise((resolve, reject) => {
+            s3.upload(params, (err, data) => {
+              if (err) {
+                reject("Error uploading MP3: " + err.message);
+              } else {
+                resolve(data.Location);
+              }
+            }).on("httpUploadProgress", (progress) => {
+              const percentage = Math.round(
+                (progress.loaded / progress.total) * 100
+              );
+              console.log(`Upload Progress: ${percentage}%`);
+            });
+          });
+        });
+
+        Promise.all(uploadPromises)
+          .then((urls) => {
+            window.uploadedMp3Url = urls; // Save URLs globally
+            urls.forEach((url) => displayAudio(url)); // Display the uploaded files
+            alert("MP3s uploaded successfully");
+          })
+          .catch((err) => {
+            alert("Error uploading MP3s: " + err);
+          });
+      }
+
+      // Display uploaded MP3 audio players
+      function displayAudio(url) {
+        const uploadedMp3Container = document.getElementById(
+          "uploadedMp3Container"
+        );
+        const audioElement = document.createElement("audio");
+        audioElement.src = url;
+        audioElement.controls = true;
+        uploadedMp3Container.appendChild(audioElement);
+      }
+
+      // Bind the upload button click event
+      $("#uploadMp3Button").click(function () {
+        uploadMp3(); // Trigger the upload process
+      });
+
+      // Fetch albums for dropdown and album name mapping
+      // async function loadDropdownData(selectId) {
+      //   try {
+      //     const albums = await $.get(`${API_ENDPOINT}/albums`);
+
+      //     albumMap = {};
+      //     const selectElement = $(`#${selectId}`);
+      //     selectElement.empty();
+
+      //     albums.forEach((album) => {
+      //       albumMap[album.album_id] = album.title;
+      //       selectElement.append(
+      //         `<option value="${album.album_id}">${album.title}</option>`
+      //       );
+      //     });
+      //   } catch (error) {
+      //     console.error("Error loading albums:", error);
+      //   }
+      // }
+
+      // // Fetch all tracks and display them in the table
+      // function loadTracks() {
+      //   $.get(`${API_ENDPOINT}/tracks`, function (data) {
+      //     $("#tracksTable tbody").empty();
+      //     data.forEach((track) => {
+      //       const albumName = albumMap[track.album_id] || "Unknown Album";
+      //       $("#tracksTable tbody").append(`
+      //                   <tr>
+      //                       <td>${track.title}</td>
+      //                       <td>${albumName}</td>
+      //                       <td>${track.track_number}</td>
+      //                       <td>${track.label}</td>
+      //                       <td>
+      //                           <button onclick="openUpdateModal('${track.track_id}', '${track.title}', '${track.album_id}', '${track.track_number}', '${track.label}')">Update</button>
+      //                           <button onclick="deleteTrack('${track.track_id}')">Delete</button>
+      //                       </td>
+      //                   </tr>
+      //               `);
+      //     });
+      //   });
+      // }
+      // Fetch albums for dropdown and album name mapping
+async function loaddDropdownData(selectId) {
+  try {
+    const albums = await $.get(`${API_ENDPOINT}/albums`);
+
+    const selectElement = $(`#${selectId}`);
+    selectElement.empty();
+
+    albums.forEach((album) => {
+      selectElement.append(
+        `<option value="${album.album_id}">${album.title}</option>`
+      );
+    });
+  } catch (error) {
+    console.error("Error loading albums:", error);
+  }
+}
+
+async function loadTracks() {
+  try {
+    const albums = await $.get(`${API_ENDPOINT}/albums`);
+    const tracks = await $.get(`${API_ENDPOINT}/tracks`);
+
+    // Empty the table body before appending new data
+    $("#tracksTable tbody").empty();
+
+    // Loop through each track
+    tracks.forEach((track) => {
+      // Find the corresponding album for the track
+      const album = albums.find((album) => album.album_id === track.album_id);
+      const albumName = album ? album.title : "Unknown Album";
+
+      // Append the track to the table (no inline JS here)
+      const trackRow = `
+        <tr>
+          <td>${track.title}</td>
+          <td>${albumName}</td>
+          <td>${track.track_number}</td>
+          <td>${track.label}</td>
+          <td>
+            <button class="update-btn" data-id="${track.track_id}"
+                    data-title="${track.title}" 
+                    data-album="${track.album_id}" 
+                    data-track-number="${track.track_number}" 
+                    data-label="${track.label}" 
+                    data-mp3-url='${encodeURIComponent(JSON.stringify(track.mp3_url))}'>
+              Update
+            </button>
+            <br><br>
+            <button class="delete-btn" data-id="${track.track_id}" data-mp3-url='${encodeURIComponent(JSON.stringify(track.mp3_url))}'>
+              Delete
+            </button>
+          </td>
+        </tr>
+      `;
+
+      // Append row to the table body
+      $("#tracksTable tbody").append(trackRow);
+    });
+
+    // Attach click event to update buttons (after rows are added)
+    $(".update-btn").on("click", function () {
+      const trackId = $(this).data('id');
+      const title = $(this).data('title');
+      const albumId = $(this).data('album');
+      const trackNumber = $(this).data('track-number');
+      const label = $(this).data('label');
+      const mp3Urls = $(this).data('mp3-url');
+      
+      openUpdateModal(trackId, title, albumId, trackNumber, label, mp3Urls);
+    });
+
+    // Attach click event to delete buttons (after rows are added)
+    $(".delete-btn").on("click", function () {
+      const trackId = $(this).data('id');
+      const mp3Urls = $(this).data('mp3-url');
+      
+      deleteTrack(trackId, mp3Urls);
+    });
+
+  } catch (error) {
+    console.error("Error loading tracks or albums:", error);
+  }
+}
+
+
+      // Open modal to add a new track
+      $("#openAddModal").click(function () {
+        $("#addTrackForm")[0].reset();
+        loadDropdownData("addAlbum");
+        $("#addTrackModal").css("display", "flex");
+      });
+
+      
+      // Open modal to update an existing track
+function openUpdateModal(trackId, title, albumId, trackNumber, label, mp3Urls) {
+    // Populate the modal with track details
+    $("#updateTrackId").val(trackId);
+    $("#updateTitle").val(title);
+    $("#updateTrackNumber").val(trackNumber);
+    $("#updateLabel").val(label);
+    loaddDropdownData("updateAlbum");
+    $("#updateAlbum").val(albumId);
+    
+    // Store existing MP3 URLs globally in case no new files are uploaded
+    window.currentMp3Urls = JSON.parse(decodeURIComponent(mp3Urls));
+
+    $("#updateTrackModal").css("display", "block");
+}
+
+
+      // Close modals
+      $("#closeAddModal").click(function () {
+        $("#addTrackModal").css("display", "none");
+      });
+
+      $("#closeUpdateModal").click(function () {
+        $("#updateTrackModal").css("display", "none");
+      });
+      async function loadDropdownData() {
+        try {
+          const albums = await $.get(
+            `apiendpoint/albums`
+          ); // Make sure this endpoint returns a list of albums
+
+          // Populate albums dropdown
+          albums.forEach((album) => {
+            $("#album").append(
+              `<option value="${album.album_id}">${album.title}</option>`
+            );
+          });
+        } catch (error) {
+          console.error("Error loading albums:", error);
+        }
+      }
+
+      // POST method: Add a new track
+      $("#addTrackForm").submit(async function (event) {
+        event.preventDefault();
+
+        const title = $("#title").val();
+        const albumId = $("#album").val();
+        const trackNumber = $("#track_number").val();
+        const label = $("#label").val();
+
+        if (!window.uploadedMp3Url || window.uploadedMp3Url.length === 0) {
+          alert("Please upload at least one MP3 file.");
+          return;
+        }
+
+        try {
+          // Save track details
+          const trackDetails = {
+            title: title,
+            album_id: albumId,
+            track_number: trackNumber,
+            label: label,
+            mp3_url: window.uploadedMp3Url, // Array of MP3 URLs
+          };
+
+          $.ajax({
+            url: `${API_ENDPOINT}/tracks`, // Adjust if necessary
+            type: "POST",
+            data: JSON.stringify(trackDetails),
+            contentType: "application/json; charset=utf-8",
+            success: function (response) {
+              console.log("Track saved successfully:", response);
+              alert("Track added successfully!");
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+              console.error(
+                "Error saving track details:",
+                textStatus,
+                errorThrown
+              );
+              alert("Error saving track details.");
+            },
+          });
+        } catch (err) {
+          alert("Error: " + err.message);
+        }
+      });
+
+      // PUT method: Update an existing track
+$("#updateTrackForm").submit(function (event) {
+    event.preventDefault();
+
+    const trackId = $("#updateTrackId").val();
+    const trackData = {
+        title: $("#updateTitle").val(),
+        album_id: $("#updateAlbum").val(),
+        track_number: $("#updateTrackNumber").val(),
+        label: $("#updateLabel").val(),
+        // Only update mp3_url if new files are uploaded, otherwise use the current mp3 URLs
+        mp3_url: window.uploadedMp3Url && window.uploadedMp3Url.length > 0 ? window.uploadedMp3Url : window.currentMp3Urls
+    };
+
+    $.ajax({
+        url: `${API_ENDPOINT}/Tracks/${trackId}`,
+        type: "PUT",
+        contentType: "application/json",
+        data: JSON.stringify(trackData),
+        success: function (result) {
+            alert("Track updated successfully!");
+            $("#updateTrackModal").css("display", "none");
+            loadTracks(); // Reload the track list
+        },
+        error: function (err) {
+            console.error("Error updating track:", err);
+        },
+    });
+});
+
+
+      // Load data on page load
+      $(document).ready(function () {
+        loadDropdownData("addAlbum");
+        //loadDropdownData("updateTrackModal");
+        loadTracks();
+      });
+
+      // Upload MP3 files
+      $("#uploadAddMp3Button").click(function () {
+        uploadMp3("addMp3FileInput", "uploadedMp3Container");
+      });
+
+      $("#uploadUpdateMp3Button").click(function () {
+        uploadMp3("updateMp3FileInput", "uploadedMp3Container");
+      });
+      function deleteTrack(trackId, mp3Urls) {
+        // Confirm delete action
+        if (confirm("Are you sure you want to delete this track?")) {
+          // Delete track details from DynamoDB
+          console.log(trackId);
+          $.ajax({
+            url: `${API_ENDPOINT}/Tracks/${trackId}`,
+            type: "DELETE",
+            contentType: "application/json; charset=utf-8",
+
+            success: function () {
+              // Delete associated MP3 files from S3
+              deleteFromS3(mp3Urls, function () {
+                // Notify user and refresh the page after deletion
+                alert("Track and associated files deleted successfully.");
+                window.location.reload(); // Refresh the page
+              });
+            },
+            error: function (xhr, status, error) {
+              window.location.reload(); // Refresh the page
+            },
+          });
+        }
+      }
+
+      function deleteFromS3(mp3Urls, callback) {
+        const s3 = new AWS.S3();
+        let deleteCount = 0;
+        const mp3Files = JSON.parse(decodeURIComponent(mp3Urls)); // Parse and decode MP3 URLs
+        const totalDeletes = mp3Files.length; // Total files to delete
+
+        // Delete MP3 files
+        mp3Files.forEach((mp3Url) => {
+          const mp3Key = mp3Url.split("/").pop(); // Extract the file name
+          s3.deleteObject(
+            { Bucket: S3_BUCKET, Key: mp3Key },
+            function (err, data) {
+              if (err) {
+                console.log("Error deleting MP3:", err);
+              } else {
+                console.log("MP3 deleted successfully.");
+                deleteCount++;
+                checkCompletion();
+              }
+            }
+          );
+        });
+
+        // Check if all deletions are complete
+        function checkCompletion() {
+          if (deleteCount === totalDeletes) {
+            if (callback) callback();
+          }
+        }
+      }
+      $(document).ready(function () {
+            checkAccess();
+        });
+        document.getElementById('logoutBtn').addEventListener('click', function() {
+    // Clear all local storage items
+    localStorage.clear();
+    
+    // Optionally, redirect the user to a login page or home page
+    window.location.href = 'login.html'; // Replace 'login.html' with your actual login or home page
+});
+    </script>
+  </body>
+</html>

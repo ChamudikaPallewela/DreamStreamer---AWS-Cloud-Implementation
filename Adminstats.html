@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DreamStreamer - Admin Dashboard</title>
+  <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet"/>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: "Poppins", sans-serif;
+      background-color: #121212;
+      color: #e1e1e1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Sidebar styles */
+    nav.sidebar {
+      background-color: #1a1a1a;
+      width: 250px;
+      padding: 20px;
+      position: fixed;
+      height: 100vh;
+      top: 0;
+      left: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      border-right: 1px solid #333;
+    }
+
+    nav h2 {
+      font-weight: 600;
+      color: #00ffff;
+      margin-bottom: 30px;
+    }
+
+    nav ul {
+      list-style: none;
+      margin-top: 20px;
+    }
+
+    nav ul li {
+      margin-bottom: 15px;
+    }
+
+    nav ul li a {
+      text-decoration: none;
+      color: #b3b3b3;
+      font-size: 16px;
+      padding: 12px;
+      display: flex;
+      align-items: center;
+      border-radius: 5px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    nav ul li a:hover {
+      background: #00ffff;
+      color: #fff;
+    }
+
+    nav ul li a i {
+      margin-right: 15px;
+      font-size: 18px;
+    }
+
+    .main-content {
+      margin-left: 270px;
+      padding: 40px;
+      flex: 1;
+      background-color: #181818;
+    }
+
+    h1 {
+      font-weight: 600;
+      font-size: 28px;
+      margin-bottom: 25px;
+      color: #00ffff;
+    }
+
+    /* Modal styling */
+    .modal {
+      display: none;
+      position: fixed;
+      z-index: 1;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      overflow: auto;
+      background-color: rgba(0, 0, 0, 0.5);
+      justify-content: center;
+      align-items: center;
+    }
+
+    .modal-content {
+      background-color: #333;
+      padding: 20px;
+      border-radius: 10px;
+      width: 400px;
+      max-width: 90%;
+      color: white;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid #444;
+      padding-bottom: 10px;
+    }
+
+    .modal-header h2 {
+      margin: 0;
+    }
+
+    .modal-header .close {
+      color: white;
+      font-size: 28px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      margin-top: 20px;
+    }
+
+    .modal-body label {
+      display: block;
+      margin-bottom: 10px;
+    }
+
+    .modal-body input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      background-color: #555;
+      border: none;
+      color: white;
+      border-radius: 5px;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: flex-end;
+    }
+
+    .modal-footer button {
+      background-color: #00ffff;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    .modal-footer button:hover {
+      background-color: #00cccc;
+    }
+
+    /* Table styles */
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      background-color: #242424;
+      border-radius: 12px;
+      overflow: hidden;
+    }
+
+    table,
+    th,
+    td {
+      border: none;
+    }
+
+    th,
+    td {
+      padding: 12px 15px;
+      text-align: left;
+      color: #b3b3b3;
+    }
+
+    th {
+      background-color: #333;
+      color: #fff;
+      font-size: 16px;
+    }
+
+    tr:nth-child(even) {
+      background-color: #2a2a2a;
+    }
+
+    tr:hover {
+      background-color: #333;
+    }
+
+    @media only screen and (max-width: 768px) {
+      .main-content {
+        margin-left: 0;
+      }
+
+      nav.sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+      }
+    }
+    form {
+    background-color: #242424;
+    padding: 20px;
+    border-radius: 10px;
+    width: 100%;
+    max-width: 500px;
+    margin: 0 auto;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.5);
+}
+
+form label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: 500;
+    color: #b3b3b3;
+}
+
+form input, form select {
+    width: 100%;
+    padding: 12px;
+    margin-bottom: 20px;
+    background-color: #333;
+    border: none;
+    border-radius: 5px;
+    color: #e1e1e1;
+    font-size: 14px;
+}
+
+form input[type="file"] {
+    padding: 5px;
+}
+
+form button {
+    width: 100%;
+    background-color: #00ffff;
+    color: #121212;
+    padding: 12px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+form button:hover {
+    background-color: #00cccc;
+}
+button {
+        background:linear-gradient(135deg, #00bcd4, #1de9b6);;
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        font-size: 1rem;
+      }
+
+      button:hover {
+        background-color: #21d1d1;
+      }
+
+  </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="dashboard-container">
+        <nav class="sidebar">
+            <a href="admin.html">
+                <img src="logo.png" alt="DreamStreamer Logo" style="width: 200px; height: auto;" />
+              </a>
+        
+            <ul>
+              <li><a href="admin.html"><i class="fas fa-home"></i> Home</a></li>
+              <li><a href="Genres.html" id="manageAlbums"><i class="fas fa-music"></i> Genres</a></li>
+              <li><a href="Artist.html"><i class="fas fa-user"></i> Artist</a></li>
+              <li><a href="Albums.html"><i class="fas fa-record-vinyl"></i> Albums</a></li>
+              <li><a href="Tracks.html"><i class="fas fa-headphones"></i> Tracks</a></li>
+              <li><a href="Adminstats.html"><i class="fas fa-chart-line"></i> Analytics</a></li>
+              <li><a href="#" class="nav-link" id="logoutBtn"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+          </nav>
+
+        <div class="main-content">
+        <h1>Album Management</h1>
+
+        <!-- New buttons -->
+        <div class="request-buttons">
+            <button class="request-button" id="InventoryButton">Request Inventory Report</button>
+            <button class="request-button" id="topArtistsButton">Request Top 10 Artists</button>
+            <button class="request-button" id="topAlbumsButton">Request Top 10 Albums</button>
+            <button class="request-button" id="topTracksButton">Request Top 10 Tracks</button>
+            <br>
+            <br>
+            <button class="request-button" id="topPurchasesButton">Request Top 10 Purchases</button>
+            
+        </div>
+
+        <!-- Status message -->
+        <div id="statusMessage"></div>
+    </div>
+
+    <script>
+        const lastAuthUser = localStorage.getItem('cognitoid') || 'guest';
+
+// Function to check access rights
+function checkAccess() {
+    // If the user is not 'admin', redirect to the 404 error page
+    if (lastAuthUser !== 'admin') {
+        window.location.href = '404.html';  // Redirect non-admin users
+    } else {
+        document.body.style.display = 'block';  // Show page for admin
+    }
+}
+document.getElementById('logoutBtn').addEventListener('click', function() {
+    // Clear all local storage items
+    localStorage.clear();
+    
+    // Optionally, redirect the user to a login page or home page
+    window.location.href = 'login.html'; // Replace 'login.html' with your actual login or home page
+});
+
+        // Function to handle the button click and delay
+        function handleRequest(requestType, redirectPage) {
+            const statusMessage = document.getElementById('statusMessage');
+
+            // Show the initial request message
+            statusMessage.textContent = `Request for ${requestType} is being sent...`;
+
+            // Simulate 1-minute delay (60000 milliseconds)
+            setTimeout(() => {
+                statusMessage.textContent = `Request for ${requestType} completed. Redirecting to ${requestType} page...`;
+
+                // Redirect to the relevant page after 1 minute
+                window.location.href = redirectPage;
+            }, 6000); // 1 minute
+        }
+    const API_ENDPOINT = 'apiendpoint';  // Replace with your actual API URL
+
+    // Fetch the top 10 clicked albums from Lambda
+    function fetchTopAlbums() {
+        $.ajax({
+            url: `${API_ENDPOINT}/albumInteractions`,  // Replace with your actual API route
+            type: 'GET',
+            dataType: 'json',  // Ensure that the response is parsed as JSON
+            success: function(response) {
+                console.log('API Response:', response);  // Log the response
+                const albums = response;
+
+                // displayAlbumsTable(albums);
+                // renderAlbumsChart(albums);
+
+                console.log('Albums data to be emailed:', albums);  // Log albums data
+                sendEmailWithTopAlbums(albums);  // Call email function with album data
+
+                // Wait for 2 minutes before redirecting
+                setTimeout(() => {
+                    window.location.href = 'top_albums.html';  // Redirect to the top albums page after delay
+                }, 120000);  // 2 minutes in milliseconds
+            },
+            error: function() {
+                alert('Error fetching top albums');
+            }
+        });
+    }
+    
+
+    function sendEmailWithTopAlbums(albums) {
+        const EMAIL_LAMBDA_ENDPOINT = 'apiendpoint/TopAlbums'; // Replace with your actual endpoint
+
+        // Log the albums data to be sent
+        console.log('Sending email with albums data:', albums);
+
+        // Send the POST request using Fetch API
+        fetch(EMAIL_LAMBDA_ENDPOINT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ albums: albums }) // Ensure the data is being sent correctly
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Email sent successfully:', data);
+
+            // Ask user if they want to view the top albums page
+            const viewPage = confirm('Email sent successfully. Do you want to view the Top Albums page now?');
+            if (viewPage) {
+                window.location.href = 'top_albums.html';  // Redirect to the top albums page
+            }
+        })
+        .catch(error => {
+            console.error('Error sending email:', error);
+        });
+    }
+    // Function to fetch counts of tracks, artists, genres, and albums from the Lambda function
+function fetchCounts() {
+    $.ajax({
+        url: `${API_ENDPOINT}/Inventory`,  // Replace with your actual API Gateway URL
+        type: 'GET',  // HTTP method type for getting data
+        dataType: 'json',  // Expecting a JSON response
+        success: function(response) {
+            console.log('API Response:', response);  // Log the response for debugging
+            const counts = response.data;  // Accessing the counts from the response
+
+            // You can now use the counts to update the UI or pass it to other functions
+            console.log('Counts data:', counts);
+
+            // Optionally, if you want to email the counts data
+            sendEmailWithCounts(counts);
+
+            
+        },
+        error: function() {
+            alert('Error fetching counts');
+        }
+    });
+}
+function sendEmailWithCounts(counts) {
+    const EMAIL_LAMBDA_ENDPOINTa = 'apiendpoint/InventoryCounts'; // Replace with your actual endpoint
+
+    // Log the counts data to be sent
+    console.log('Sending email with counts data:', counts);
+
+    // Send the POST request using Fetch API
+    fetch(EMAIL_LAMBDA_ENDPOINTa, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ inventory: counts })  // Ensure the data is being sent in the correct format
+        
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok ' + response.statusText);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Email sent successfully:', data);
+        alert('Email sent successfully!');
+        
+
+        
+    })
+    .catch(error => {
+        console.error('Error sending email:', error);
+    });
+}
+
+
+    // Fetch the top 10 clicked artists from Lambda
+    function fetchTopArtists() {
+            $.ajax({
+                url: `${API_ENDPOINT}/logInteraction`,
+                type: 'GET',
+                dataType: 'json',  // Ensure that the response is parsed as JSON
+                success: function(response) {
+                    const artists = response;  // No need to parse JSON here
+                    console.log('artists data to be emailed:', artists);
+                    // displayArtistsTable(artists); // Display the table
+                    // renderArtistsChart(artists);  // Render the chart
+                    sendEmailWithTopArtists(artists);
+                },
+                error: function() {
+                    alert('Error fetching top artists');
+                }
+            });
+        }
+        function sendEmailWithTopArtists(artists) {
+        const EMAIL_LAMBDA_ENDPOINTt = 'apiendpoint/EmailArtists'; // Replace with your actual endpoint
+
+        // Log the albums data to be sent
+        console.log('Sending email with artists data:', artists);
+
+        // Send the POST request using Fetch API
+        fetch(EMAIL_LAMBDA_ENDPOINTt, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ artists: artists }) // Ensure the data is being sent correctly
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Email sent successfully:', data);
+
+            // Ask user if they want to view the top albums page
+            const viewPage = confirm('Email sent successfully. Do you want to view the Top Albums page now?');
+            if (viewPage) {
+                window.location.href = 'top_artists.html';  // Redirect to the top albums page
+            }
+        })
+        .catch(error => {
+            console.error('Error sending email:', error);
+        });
+    }
+    function fetchTopTracks() {
+            $.ajax({
+                url: `${API_ENDPOINT}/trackInteraction`,
+                type: 'GET',
+                dataType: 'json',  // Ensure that the response is parsed as JSON
+                success: function(response) {
+                    const tracks = response;  // No need to parse JSON here
+                    console.log('tracks data to be emailed:', tracks);
+                    sendEmailWithTopTracks(tracks);
+                },
+                error: function() {
+                    alert('Error fetching top tracks');
+                }
+            });
+        }
+        function sendEmailWithTopTracks(tracks) {
+        const EMAIL_LAMBDA_ENDPOINTT = 'apiendpoint/EmailTrack'; // Replace with your actual endpoint
+
+        // Log the albums data to be sent
+        console.log('Sending email with tracks data:', tracks);
+
+        // Send the POST request using Fetch API
+        fetch(EMAIL_LAMBDA_ENDPOINTT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ tracks: tracks }) // Ensure the data is being sent correctly
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Email sent successfully:', data);
+
+            // Ask user if they want to view the top albums page
+            const viewPage = confirm('Email sent successfully. Do you want to view the Top Albums page now?');
+            if (viewPage) {
+                window.location.href = 'top_tracks.html';  // Redirect to the top albums page
+            }
+        })
+        .catch(error => {
+            console.error('Error sending email:', error);
+        });
+    }
+    // Fetch the top 10 purchased tracks from Lambda
+    function fetchTopPuchases() {
+            $.ajax({
+                url: `${API_ENDPOINT}/purchase`,  // Replace with your actual API route
+                type: 'GET',
+                dataType: 'json',  // Ensure that the response is parsed as JSON
+                success: function(response) {
+                    console.log('API Response:', response);  // Log the response
+                    const tracks = response;
+                    console.log('tracks data to be emailed:', tracks);
+                    sendEmailWithTopPurchases(tracks);
+                    
+                },
+                error: function(xhr, status, error) {
+                    console.log('Error fetching top tracks:', error);  // Log the error in the console
+                    console.log('XHR:', xhr);  // Log the full XHR response
+                    console.log('Status:', status);
+                    alert('Error fetching top tracks');
+                }
+            });
+        }
+        function sendEmailWithTopPurchases(tracks) {
+        const EMAIL_LAMBDA_ENDPOINTTT = 'apiendpoint/EmailPurchase'; // Replace with your actual endpoint
+
+        // Log the albums data to be sent
+        console.log('Sending email with tracks data:', tracks);
+
+        // Send the POST request using Fetch API
+        fetch(EMAIL_LAMBDA_ENDPOINTTT, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ tracks: tracks }) // Ensure the data is being sent correctly
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok ' + response.statusText);
+            }
+            return response.json();
+        })
+        .then(data => {
+            console.log('Email sent successfully:', data);
+
+            // Ask user if they want to view the top albums page
+            const viewPage = confirm('Email sent successfully. Do you want to view the Top Albums page now?');
+            if (viewPage) {
+                window.location.href = 'top_purchases.html';  // Redirect to the top albums page
+            }
+        })
+        .catch(error => {
+            console.error('Error sending email:', error);
+        });
+    }
+
+        
+    // Add event listeners for each button with the relevant page
+    document.getElementById('InventoryButton').addEventListener('click', () =>  {
+        fetchCounts();  // Fetch top albums instead of redirecting
+    });
+    document.getElementById('topArtistsButton').addEventListener('click', () =>  {
+        fetchTopArtists();  // Fetch top albums instead of redirecting
+    });
+    document.getElementById('topAlbumsButton').addEventListener('click', () => {
+        fetchTopAlbums();  // Fetch top albums instead of redirecting
+    });
+    document.getElementById('topTracksButton').addEventListener('click', () => {
+        fetchTopTracks();  // Fetch top albums instead of redirecting
+    });
+    document.getElementById('topPurchasesButton').addEventListener('click',  () => {
+        fetchTopPuchases()  // Fetch top albums instead of redirecting
+    });
+
+    // Load the top tracks when the page loads
+    $(document).ready(function() {
+        checkAccess();
+    });
+</script>
+
+
+   
+</body>
+
+</html>

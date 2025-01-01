@@ -1,0 +1,47 @@
+import pymysql
+
+def lambda_handler(event, context):
+    # Database connection parameters
+    db_host = 'host_name'
+    db_user = 'admin'
+    db_password = 'password'  # Replace with your actual password
+    db_name = 'lambda_rds_2'  # Replace with your actual database name
+    
+    # SQL command to create a table
+    create_table_sql = """
+    CREATE TABLE IF NOT EXISTS users (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        email VARCHAR(100) NOT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    );
+    """
+    
+    # Connect to the database
+    connection = pymysql.connect(
+        host=db_host,
+        user=db_user,
+        password=db_password,
+        db=db_name,
+        charset='utf8mb4',
+        cursorclass=pymysql.cursors.DictCursor
+    )
+    
+    try:
+        with connection.cursor() as cursor:
+            # Execute the SQL command
+            cursor.execute(create_table_sql)
+            connection.commit()  # Commit the transaction
+            return {
+                'statusCode': 200,
+                'body': 'Table created successfully.'
+            }
+    except Exception as e:
+        # Log the error and return an error response
+        return {
+            'statusCode': 500,
+            'body': f'Error occurred: {str(e)}'
+        }
+    finally:
+        # Close the connection
+        connection.close()

@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DreamStreamer - Admin Dashboard</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css"
+      rel="stylesheet" />
+  <style>
+   * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #121212;
+        color: #e1e1e1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Sidebar styles */
+      nav.sidebar {
+        background-color: #1a1a1a;
+        width: 250px;
+        padding: 20px;
+        position: fixed;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border-right: 1px solid #333;
+      }
+
+      nav h2 {
+        font-weight: 600;
+        color: #00ffff;
+        margin-bottom: 30px;
+      }
+
+      nav ul {
+        list-style: none;
+        margin-top: 20px;
+      }
+
+      nav ul li {
+        margin-bottom: 15px;
+      }
+
+      nav ul li a {
+        text-decoration: none;
+        color: #b3b3b3;
+        font-size: 16px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        border-radius: 5px;
+        transition: background 0.3s, color 0.3s;
+      }
+
+      nav ul li a:hover {
+        background: #00ffff;
+        color: #fff;
+      }
+
+      nav ul li a i {
+        margin-right: 15px;
+        font-size: 18px;
+      }
+
+      nav .user-info {
+        margin-top: auto;
+        display: flex;
+        align-items: center;
+        color: #b3b3b3;
+      }
+
+      nav .user-info i {
+        font-size: 24px;
+        margin-right: 10px;
+      }
+
+      .main-content {
+        margin-left: 270px;
+        padding: 40px;
+        flex: 1;
+        background-color: #181818;
+      }
+
+
+    .container {
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2.5rem;
+      margin-bottom: 20px;
+    }
+
+    .stats {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+    }
+
+    .stat-box {
+  background: linear-gradient(135deg, #1de9b6, #00bcd4);;
+  padding: 20px;
+  border-radius: 10px;
+  width: 220px; /* Adjusted width */
+  min-height: 260px; /* Adjusted height */
+  max-width: 220px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+}
+
+.stat-box img {
+  margin-top: 10px;
+  width: 100%; /* Make image take full width */
+  height: auto; /* Keep aspect ratio */
+  border-radius: 10px;
+  object-fit: cover;
+}
+
+
+    .stat-box h2 {
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+    }
+
+    .stat-box p {
+      font-size: 1rem;
+      margin: 0;
+    }
+
+    
+  </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="dashboard-container">
+        <nav class="sidebar">
+          <h2><i class="fas fa-music"></i>DreamStreamer</h2>
+  
+          <ul>
+            <li>
+              <a href="user.html"><i class="fas fa-home"></i> Home</a>
+            </li>
+            <li>
+              <a href="viewAlbums.html" id="manageAlbums">
+                <i class="fas fa-music"></i> View Albums
+              </a>
+            </li>
+            <li>
+              <a href="analytics.html">
+                <i class="fas fa-chart-line"></i> Your Analytics
+              </a>
+            </li>
+            <li>
+              <a href="yourPurchase.html">
+                <i class="fas fa-shopping-basket"></i> View Purchase
+              </a>
+            </li>
+            <li>
+              <a href="favorites.html">
+                <i class="fas fa-heart"></i> Favorites
+              </a>
+            </li>
+            <li id="usernameDisplay" style="position: relative;">
+              <a href="#" id="username-link">
+                <i class="fas fa-user"></i> <span id="username"></span>
+              </a>
+              <div id="logoutDropdown" style="display: none; position: absolute; top: 100%; left: 0;">
+                <button id="logoutButton">Logout</button>
+              </div>
+            </li>
+          </ul>
+        </nav>
+  
+        <div class="main-content">
+  <div class="container">
+    <h1>Weekly Listening Stats</h1>
+
+    <div class="stats">
+      <div class="stat-box">
+        <h2>Most Listened Album</h2>
+        <p id="albumName">Loading...</p>
+        <img id="albumArtAlbum" src="" alt="Album Art" />
+      </div>
+
+      <div class="stat-box">
+        <h2>Most Listened Track</h2>
+        <p id="trackName">Loading...</p>
+        <img id="albumArtTrack" src="" alt="Album Art" />
+      </div>
+
+      <div class="stat-box">
+        <h2>Most Listened Artist</h2>
+        <p id="artistName">Loading...</p>
+        <img id="artistImage" src="" alt="Artist Image" />
+      </div>
+    </div>
+  </div>
+        </div>
+
+  <script>
+    window.onload = function () {
+      // Log all local storage items
+      console.log('Local Storage:', localStorage);
+
+      // Retrieve the logged-in user's username from local storage
+const usernameKey = 'cognitoid';
+const username = localStorage.getItem(usernameKey);
+
+console.log('Retrieved Username:', username);  // Log retrieved username
+
+if (!username) {
+    console.error('Username not found in local storage');
+    
+    // Display message in specific elements when no username is found
+    document.getElementById('albumName').innerText = 'No username found';
+    document.getElementById('trackName').innerText = 'No username found';
+    document.getElementById('artistName').innerText = 'No username found';
+    
+    // Optionally redirect to login if no username is found
+    window.location.href = '404.html'; // Redirect to login page
+    return;  // Exit the function
+}
+
+// Display the username in the sidebar
+const usernameElement = document.getElementById('username');
+if (usernameElement) {
+    usernameElement.innerText = username;  // Set the username in the sidebar
+}
+
+
+      // Replace with your actual API Gateway endpoint
+      const statsApiUrl = `apiendpoint/stats?username=${encodeURIComponent(username)}`;
+
+      fetch(statsApiUrl)
+        .then(response => response.json())
+        .then(data => {
+          // Populate the HTML elements with the fetched data
+          document.getElementById('albumName').innerText = data.most_listened_album || 'No data';
+          document.getElementById('trackName').innerText = data.most_listened_track || 'No data';
+          document.getElementById('artistName').innerText = data.most_listened_artist || 'No data';
+          
+          // Fetch album art for both most listened album and track
+          const albumId = data.most_listened_album_id; // Assuming this is part of the stats API response
+          if (albumId) {
+            const albumArtApiUrl = `apiendpoint/album-art?album_id=${encodeURIComponent(albumId)}`;
+
+            fetch(albumArtApiUrl)
+              .then(response => response.json())
+              .then(albumData => {
+                document.getElementById('albumArtAlbum').src = albumData.album_art_url || '';
+                document.getElementById('albumArtAlbum').alt = albumData.album_art_url ? 'Album Art' : 'No Album Art Available';
+
+                // Assuming the most listened track also uses the same album art
+                document.getElementById('albumArtTrack').src = albumData.album_art_url || '';
+                document.getElementById('albumArtTrack').alt = albumData.album_art_url ? 'Album Art' : 'No Album Art Available';
+              })
+              .catch(error => {
+                console.error('Error fetching album art:', error);
+                document.getElementById('albumArtAlbum').alt = 'Error fetching album art';
+                document.getElementById('albumArtTrack').alt = 'Error fetching album art';
+              });
+          }
+
+          // Fetch artist image
+          const artistId = data.most_listened_artist_id; // Assuming this is part of the stats API response
+          if (artistId) {
+            const artistImageApiUrl = `apiendpoint/artist-url?artist_id=${encodeURIComponent(artistId)}`;
+
+            fetch(artistImageApiUrl)
+              .then(response => response.json())
+              .then(artistData => {
+                document.getElementById('artistImage').src = artistData.image_url || '';
+                document.getElementById('artistImage').alt = artistData.image_url ? 'Artist Image' : 'No Artist Image Available';
+              })
+              .catch(error => {
+                console.error('Error fetching artist image:', error);
+                document.getElementById('artistImage').alt = 'Error fetching artist image';
+              });
+          }
+        })
+        .catch(error => {
+          console.error('Error fetching data:', error);
+          document.getElementById('albumName').innerText = 'Error fetching data';
+          document.getElementById('trackName').innerText = 'Error fetching data';
+          document.getElementById('artistName').innerText = 'Error fetching data';
+        });
+    };
+     // Toggle logout dropdown when clicking the username
+     const usernameLink = document.getElementById("username-link");
+      const logoutDropdown = document.getElementById("logoutDropdown");
+
+      usernameLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        logoutDropdown.style.display =
+          logoutDropdown.style.display === "block" ? "none" : "block";
+      });
+
+      // Logout functionality
+      const logoutButton = document.getElementById("logoutButton");
+      logoutButton.addEventListener("click", function () {
+        // Clear all local storage to log the user out completely
+        localStorage.clear();
+
+        // Redirect to login page
+        window.location.href = "login.html";
+      });
+  </script>
+</body>
+</html>

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Purchases</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> 
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <style>
+        * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #121212;
+        color: #e1e1e1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      /* Sidebar styles */
+      nav.sidebar {
+        background-color: #1a1a1a;
+        width: 250px;
+        padding: 20px;
+        position: fixed;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        border-right: 1px solid #333;
+      }
+
+      nav h2 {
+        font-weight: 600;
+        color: #00ffff;
+        margin-bottom: 30px;
+      }
+
+      nav ul {
+        list-style: none;
+        margin-top: 20px;
+      }
+
+      nav ul li {
+        margin-bottom: 15px;
+      }
+
+      nav ul li a {
+        text-decoration: none;
+        color: #b3b3b3;
+        font-size: 16px;
+        padding: 12px;
+        display: flex;
+        align-items: center;
+        border-radius: 5px;
+        transition: background 0.3s, color 0.3s;
+      }
+
+      nav ul li a:hover {
+        background: #00ffff;
+        color: #fff;
+      }
+
+      nav ul li a i {
+        margin-right: 15px;
+        font-size: 18px;
+      }
+
+      nav .user-info {
+        margin-top: auto;
+        display: flex;
+        align-items: center;
+        color: #b3b3b3;
+      }
+
+      nav .user-info i {
+        font-size: 24px;
+        margin-right: 10px;
+      }
+
+      .main-content {
+        margin-left: 270px;
+        padding: 40px;
+        flex: 1;
+        background-color: #181818;
+      }
+
+
+    .container {
+      text-align: center;
+    }
+
+        h1 {
+            font-size: 32px;
+            color: #00FFFF;
+            margin-bottom: 20px;
+        }
+
+        table {
+            width: 100%;
+            margin-bottom: 30px;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 12px 15px;
+            border: 1px solid #00FFFF;
+            text-align: left;
+        }
+
+        th {
+            background-color: #333;
+        }
+
+        td {
+            background-color: #222;
+        }
+
+        .purchase-btn {
+            background-color: #00FFFF;
+            color: #121212;
+            border: none;
+            padding: 8px 12px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+
+        .purchase-btn:hover {
+            background-color: #00cccc;
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <div class="dashboard-container">
+      <nav class="sidebar">
+        <h2><i class="fas fa-music"></i>DreamStreamer</h2>
+
+        <ul>
+          <li>
+            <a href="user.html"><i class="fas fa-home"></i> Home</a>
+          </li>
+          <li>
+            <a href="viewAlbums.html" id="manageAlbums">
+              <i class="fas fa-music"></i> View Albums
+            </a>
+          </li>
+          <li>
+            <a href="analytics.html">
+              <i class="fas fa-chart-line"></i> Your Analytics
+            </a>
+          </li>
+          <li>
+            <a href="yourPurchase.html">
+              <i class="fas fa-shopping-basket"></i> View Purchase
+            </a>
+          </li>
+          <li>
+            <a href="favorites.html">
+              <i class="fas fa-heart"></i> Favorites
+            </a>
+          </li>
+          <li id="usernameDisplay" style="position: relative;">
+            <a href="#" id="username-link">
+              <i class="fas fa-user"></i> <span id="username"></span>
+            </a>
+            <div id="logoutDropdown" style="display: none; position: absolute; top: 100%; left: 0;">
+              <button id="logoutButton">Logout</button>
+            </div>
+          </li>
+        </ul>
+      </nav>
+  
+        <div class="main-content">
+    <h1>Your Purchases</h1>
+    <table id="purchasesTable">
+        <thead>
+            <tr>
+                <th>Track Name</th>
+                <th>Purchase Date</th>
+                <th>Download</th> <!-- Column for the download button -->
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+        </div>
+
+    <script>
+        const API_ENDPOINT = 'apiendpoint/getTrackUrl';
+
+        // Function to retrieve the logged-in user's username from localStorage (Cognito)
+        function getUsername() {
+    const rawUserInfo = localStorage.getItem('cognitoid');
+
+    if (rawUserInfo) {
+        return rawUserInfo; // If user is logged in, return username
+    } else {
+        window.location.href = '404.html'; // Redirect to login page if no user is found
+        return 'Guest'; // Optional, in case you need to return something before redirecting
+    }
+}
+
+
+        // Fetch the user's purchases from Lambda
+        function fetchUserPurchases() {
+            const username = getUsername(); // Retrieve the logged-in user's username
+            
+            $.ajax({
+                url: `apiendpoint/userPurchaseInteraction?username=${encodeURIComponent(username)}`, // Use GET and pass username as query parameter
+                type: 'GET',
+                contentType: 'application/json',
+                success: function(response) {
+                    const purchases = response; // No need to parse JSON here
+                    displayPurchasesTable(purchases); // Display the table with purchases
+                    console.log('Retrieved purchases:', response);  // Log the purchases
+                    
+                },
+                error: function() {
+                    alert('Error fetching purchases');
+                }
+            });
+        }
+
+        // Display purchases in a table
+        function displayPurchasesTable(purchases) {
+            const tbody = document.querySelector('#purchasesTable tbody');
+            tbody.innerHTML = ''; // Clear the table
+
+            purchases.forEach(purchase => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${purchase.track_name}</td>
+                    <td>${new Date(purchase.purchase_date).toLocaleDateString()}</td>
+                    <td><button class="purchase-btn" onclick="requestTrackDownload('${purchase.track_id}')">Download</button></td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // Request the MP3 URL by track ID from Lambda, and trigger the download
+        function requestTrackDownload(trackId) {
+            $.ajax({
+                url: `${API_ENDPOINT}?track_id=${encodeURIComponent(trackId)}`, // Pass track_id as query parameter
+                type: 'GET',
+                contentType: 'application/json',
+                success: function(response) {
+                    const trackUrl = response.mp3_url; // Assuming the response contains 'mp3_url'
+                    downloadTrack(trackUrl); // Trigger download with the URL received
+                },
+                error: function() {
+                    alert('Error fetching track URL');
+                }
+            });
+        }
+
+        // Function to download the purchased track
+        function downloadTrack(trackUrl) {
+            const decodedUrl = decodeURIComponent(trackUrl);
+            const a = document.createElement('a');
+            a.href = decodedUrl;
+            a.download = decodedUrl.split('/').pop(); // Set the download file name from the URL
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        // Load the user's purchases when the page loads
+        // Load the username and user's purchases when the page loads
+    $(document).ready(function() {
+        const username = getUsername();
+        $('#username').text(username); // Set the username in the navbar
+        fetchUserPurchases(); // Fetch user purchases
+    });
+     // Toggle logout dropdown when clicking the username
+     const usernameLink = document.getElementById("username-link");
+      const logoutDropdown = document.getElementById("logoutDropdown");
+
+      usernameLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        logoutDropdown.style.display =
+          logoutDropdown.style.display === "block" ? "none" : "block";
+      });
+
+      // Logout functionality
+      const logoutButton = document.getElementById("logoutButton");
+      logoutButton.addEventListener("click", function () {
+        // Clear all local storage to log the user out completely
+        localStorage.clear();
+
+        // Redirect to login page
+        window.location.href = "login.html";
+      });
+    </script>
+</body>
+</html>

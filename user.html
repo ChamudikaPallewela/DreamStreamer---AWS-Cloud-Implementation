@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Artist and Album Management</title>
+    <script src="https://sdk.amazonaws.com/js/aws-sdk-2.7.16.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap"
+      rel="stylesheet" />
+      <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+      <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png">
+      <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png">
+      <link rel="manifest" href="/site.webmanifest">
+      <meta name="msapplication-TileColor" content="#da532c">
+      <meta name="theme-color" content="#ffffff">
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Poppins", sans-serif;
+        background-color: #121212;
+        color: #e1e1e1;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      nav.sidebar {
+        background-color: #1f1f1f;
+        width: 250px;
+        padding: 20px;
+        position: fixed;
+        height: 100vh;
+        top: 0;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-between;
+        border-right: 1px solid #333;
+      }
+
+      nav h2 {
+        font-weight: 600;
+        color: #00ffff;
+      }
+
+      nav ul {
+        list-style: none;
+        margin-top: 50px;
+      }
+
+      nav ul li {
+        margin-bottom: 20px;
+      }
+
+      nav ul li a {
+        text-decoration: none;
+        color: #b3b3b3;
+        font-size: 18px;
+        padding: 10px 20px;
+        display: block;
+        border-radius: 5px;
+        transition: background 0.3s;
+      }
+
+      nav ul li a:hover {
+        background: #00ffff;
+        color: #fff;
+      }
+
+      .main-content {
+        margin-left: 270px;
+        padding: 30px;
+        flex: 1;
+        background-color: #181818;
+      }
+
+      h1 {
+        font-weight: 600;
+        font-size: 32px;
+        margin-bottom: 20px;
+        color: #00ffff;
+      }
+
+      #artistsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
+  justify-content: center;
+}
+
+.artist-item {
+  background: #333;
+  border-radius: 12px;
+  overflow: hidden;
+  text-align: center;
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+
+.artist-item:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+
+.artist-item img {
+  width: 100%;
+  height: 180px; /* Adjusted height to match the smaller container */
+  object-fit: cover;
+  transition: transform 0.3s;
+}
+
+.artist-item:hover img {
+  transform: scale(1.1);
+}
+
+.artist-info h2 {
+  padding: 15px 10px;
+  font-size: 18px; /* Slightly reduced font size */
+  color: #e1e1e1;
+}
+
+/* Modal styles */
+#albumModal {
+  display: none;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: #121212;
+  padding: 20px; /* Reduced padding */
+  border-radius: 12px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
+  width: 60%; /* Reduced width */
+  max-height: 75vh; /* Adjusted max-height */
+  overflow-y: auto;
+  z-index: 1000;
+}
+
+#albumsContainer {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); /* Reduced min size */
+  gap: 15px; /* Reduced gap */
+  justify-content: center;
+}
+
+.album-item {
+  background: #333;
+  border-radius: 12px;
+  text-align: center;
+  padding: 10px; /* Reduced padding */
+  transition: transform 0.3s, box-shadow 0.3s;
+  cursor: pointer;
+}
+
+.album-item:hover {
+  transform: translateY(-8px); /* Slightly smaller translation */
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.4); /* Reduced shadow intensity */
+}
+
+.album-item img {
+  width: 130px; /* Smaller image */
+  height: 130px;
+  object-fit: cover;
+  border-radius: 8px; /* Slightly smaller border-radius */
+}
+
+.album-info h2 {
+  margin-top: 12px; /* Reduced margin */
+  color: #e1e1e1;
+  font-size: 16px; /* Slightly smaller font */
+}
+
+/* Close button with improved style */
+.close-button {
+  background: linear-gradient(135deg, #00bcd4, #1de9b6); /* Gradient background */
+  color: #fff;
+  padding: 8px 12px; /* Slightly smaller padding */
+  border: none;
+  border-radius: 8px;
+  font-size: 14px; /* Slightly smaller font size */
+  cursor: pointer;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.close-button:hover {
+  background: linear-gradient(135deg, #1de9b6, #00bcd4); /* Hover effect for the gradient */
+  box-shadow: 0 5px 15px rgba(0, 188, 212, 0.5); /* Add a nice shadow on hover */
+}
+
+      .close-button:hover {
+        background: #0ef7f7;
+      }
+
+      .track-list {
+        list-style: none;
+        margin: 20px 0;
+        padding: 0;
+      }
+
+      .track-item {
+        background: #333;
+        border-radius: 8px;
+        padding: 10px;
+        margin-bottom: 10px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        cursor: pointer;
+      }
+
+      .track-item:hover {
+        background: #444;
+      }
+
+      .track-info {
+        flex: 1;
+        margin-right: 10px;
+      }
+
+      .track-info h3 {
+        margin-bottom: 5px;
+        font-size: 16px;
+        color: #e1e1e1;
+      }
+
+      .track-info p {
+        margin: 0;
+        font-size: 14px;
+        color: #b3b3b3;
+      }
+
+      .track-actions button {
+        background: #00ffff;
+        border: none;
+        color: #fff;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+
+      .track-actions button:hover {
+        background: #09e9e9;
+      }
+
+      @media only screen and (max-width: 768px) {
+        .main-content {
+          margin-left: 0;
+        }
+
+        nav.sidebar {
+          width: 100%;
+          height: auto;
+          position: static;
+        }
+      }
+      .album-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 20px;
+        }
+        .album-card {
+            background-color: #333;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            text-align: center;
+            padding: 10px;
+        }
+        .album-card img {
+            width: 100%;
+            height: auto;
+            border-bottom: 1px solid #ddd;
+        }
+        .album-card h3 {
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        .album-card p {
+            font-size: 14px;
+            color: #d3d1d1;
+            margin: 0;
+        }
+        .logoutButton {
+  background: linear-gradient(135deg, #00bcd4, #1de9b6); /* Gradient background */
+  color: #fff;
+  padding: 8px 12px; /* Slightly smaller padding */
+  border: none;
+  border-radius: 8px;
+  font-size: 14px; /* Slightly smaller font size */
+  cursor: pointer;
+  transition: background 0.3s, box-shadow 0.3s;
+}
+
+.logoutButton:hover {
+  background: linear-gradient(135deg, #1de9b6, #00bcd4); /* Hover effect for the gradient */
+  box-shadow: 0 5px 15px rgba(0, 188, 212, 0.5); /* Add a nice shadow on hover */
+}
+    </style>
+  </head>
+  <body>
+    <div class="dashboard-container">
+      <nav class="sidebar">
+        <!-- <h2><i class="fas fa-music"></i>DreamStreamer</h2> -->
+        <a href="user.html">
+          <img src="logo.png" alt="DreamStreamer Logo" style="width: 300px; height: auto;" />
+        </a>
+        
+
+        <ul>
+          <li>
+            <a href="user.html"><i class="fas fa-home"></i> Home</a>
+          </li>
+          <li>
+            <a href="viewAlbums.html" id="manageAlbums">
+              <i class="fas fa-music"></i> View Albums
+            </a>
+          </li>
+          <li>
+            <a href="analytics.html">
+              <i class="fas fa-chart-line"></i> Your Analytics
+            </a>
+          </li>
+          <li>
+            <a href="yourPurchase.html">
+              <i class="fas fa-shopping-basket"></i> View Purchase
+            </a>
+          </li>
+          <li>
+            <a href="favorites.html">
+              <i class="fas fa-heart"></i> Favorites
+            </a>
+          </li>
+          <li id="usernameDisplay" style="position: relative;">
+            <a href="#" id="username-link">
+              <i class="fas fa-user"></i> <span id="username"></span>
+            </a>
+            <div id="logoutDropdown" style="display: none; position: absolute; top: 100%; left: 0;">
+              <button id="logoutButton" class="logoutButton">Logout</button>
+          </div>
+          
+          </li>
+        </ul>
+      </nav>
+
+      <div class="main-content">
+        <h1>Artists and Albums</h1>
+        <div id="artistsContainer"></div>
+
+        <!-- Album Modal -->
+        <div id="albumModal">
+          <h2>Albums</h2>
+          <div id="albumsContainer"></div>
+          <br>
+          <br>
+          <button class="close-button" onclick="$('#albumModal').hide();">Close</button>
+
+          <div id="albumTracksContainer"></div>
+      </div>
+      <div class="header">
+        <h1>Suggested Albums</h1>
+    </div>
+    
+    <div class="container">
+        <div class="album-grid" id="suggested-albums">
+            <!-- Suggested albums will be populated here -->
+        </div>
+    </div>
+        </div>
+
+
+        <!-- Album Tracks Page (new page) -->
+      </div> 
+
+    </div>
+
+    <script>
+      // Check for Cognito authenticated user or a valid username in localStorage
+  const lastAuthUserKey = "cognitoid";
+  const lastAuthUser = localStorage.getItem(lastAuthUserKey);
+  const username = localStorage.getItem("username");
+
+  // Redirect to 404.html if no authenticated user is found
+if (!lastAuthUser || !username) {
+  window.location.href = "404.html"; // Redirect to 404 page if not authenticated
+} 
+  
+      const API_ENDPOINT =
+        "apiendpoint";
+      const S3_BUCKET = "chamuawsfile";
+      const REGION = "us-east-1";
+      // const ACCESS_KEY = use your key ;
+      // const SECRET_KEY = "add you key";
+
+      AWS.config.update({
+        accessKeyId: ACCESS_KEY,
+        secretAccessKey: SECRET_KEY,
+        region: REGION,
+      });
+
+      const s3 = new AWS.S3();
+
+      function fetchArtists() {
+        $.ajax({
+          url: `${API_ENDPOINT}/Artists`,
+          type: "GET",
+          contentType: "application/json; charset=utf-8",
+          success: function (response) {
+            console.log("Fetched artists:", response); // Log the fetched artists
+            const artists = response || [];
+            displayArtists(artists);
+          },
+          error: function () {
+            alert("Error fetching artist details");
+          },
+        });
+      }
+
+      function logArtistInteraction(artistId, artistName) {
+        const interactionData = {
+          artistId: artistId,
+          artistName: artistName, // Include the artist name in the request
+          username: localStorage.getItem("username"),
+          count: 1, // Each click counts as 1 interaction
+        };
+
+        $.ajax({
+          url: `${API_ENDPOINT}/logInteraction`,
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify(interactionData),
+          success: function (response) {
+            console.log("Interaction logged:", response);
+          },
+          error: function (error) {
+            console.error("Error logging interaction:", error);
+          },
+        });
+      }
+
+      function displayArtists(artists) {
+        const artistsContainer = document.getElementById("artistsContainer");
+        artistsContainer.innerHTML = "";
+
+        artists.forEach((artist) => {
+          console.log("Artist:", artist); // Log each artist's details
+
+          const artistDiv = document.createElement("div");
+          artistDiv.classList.add("artist-item");
+
+          // Display Artist Image
+          const imageElement = document.createElement("img");
+          imageElement.src = artist.image_url; // Use the correct property name
+          imageElement.alt = `${artist.name} Image`;
+          imageElement.style.cursor = "pointer";
+          imageElement.onclick = () => {
+            logArtistInteraction(artist.artist_id, artist.name); // Pass the artist name
+            showAlbums(artist.artist_id);
+
+            const username = localStorage.getItem("username") ;
+            localStorage.setItem("username", username);
+          };
+          artistDiv.appendChild(imageElement);
+
+          // Display Artist Information
+          const artistInfo = document.createElement("div");
+          artistInfo.classList.add("artist-info");
+          artistInfo.innerHTML = `<h2>${artist.name}</h2>`;
+          artistDiv.appendChild(artistInfo);
+
+          artistsContainer.appendChild(artistDiv);
+        });
+      }
+
+      function showAlbums(artistId) {
+        $.ajax({
+          url: `apiendpoint/${artistId}`,
+          type: "GET",
+          contentType: "application/json; charset=utf-8",
+          success: function (response) {
+            console.log("Fetched albums for artist:", response); // Log the fetched albums
+            const albums = response || [];
+            displayAlbums(albums);
+          },
+          error: function () {
+            alert("Error fetching album details");
+          },
+        });
+      }
+      // Function to log album interaction
+      function logAlbumInteraction(albumId, albumName) {
+        const interactionData = {
+          albumId: albumId,
+          albumName: albumName,
+          username: localStorage.getItem("username"), // Get the username from localStorage
+          count: 1, // Each click counts as 1 interaction
+        };
+
+        $.ajax({
+          url: `${API_ENDPOINT}/albumInteractions`, // Adjust the API endpoint if necessary
+          type: "POST",
+          contentType: "application/json",
+          data: JSON.stringify(interactionData),
+          success: function (response) {
+            console.log("Album interaction logged:", response);
+          },
+          error: function (error) {
+            console.error("Error logging album interaction:", error);
+          },
+        });
+      }
+      function displayAlbums(albums) {
+        const albumsContainer = document.getElementById("albumsContainer");
+        albumsContainer.innerHTML = "";
+
+        albums.forEach((album) => {
+          console.log("Album:", album); // Log each album's details
+
+          const albumDiv = document.createElement("div");
+          albumDiv.classList.add("album-item");
+
+          // Display Album Image
+          const imageElement = document.createElement("img");
+          imageElement.src = album.album_art_url; // Use the correct property name for the album art URL
+          imageElement.alt = `${album.title} Cover`; // Use the correct property name for album title
+          imageElement.style.cursor = "pointer";
+
+          // On clicking the album, log the interaction and navigate to the album tracks
+          imageElement.onclick = () => {
+            // Log the interaction
+            logAlbumInteraction(album.album_id, album.title); // Log interaction by albumId and albumName
+            localStorage.setItem("username", username);
+
+            // Navigate to the albumTracks page with the album_id in the URL
+            window.location.href = `albumTracks.html?albumId=${album.album_id}`;
+          };
+          albumDiv.appendChild(imageElement);
+
+          // Display Album Information
+          const albumInfo = document.createElement("div");
+          albumInfo.classList.add("album-info");
+          albumInfo.innerHTML = `<h2>${album.title} (${album.year})</h2>`;
+          albumDiv.appendChild(albumInfo);
+
+          albumsContainer.appendChild(albumDiv);
+        });
+
+        $("#albumModal").show(); // Show the modal
+      }
+      $(document).ready(function () {
+        fetchArtists(); // Fetch and display artists on page load
+      });
+      // Example: Assume the username is stored in localStorage (adjust as needed)
+      document.addEventListener("DOMContentLoaded", function () {
+        const username = localStorage.getItem("username");
+
+        // Display the username in the sidebar
+        document.getElementById("username").textContent = username;
+
+        // Log the username to the console
+        console.log("Username:", username);
+      });
+      
+
+// Declare the URLs globally
+let userAlbumsApiUrl = '';
+const suggestedAlbumsApiUrl = 'apiendpoint/suggested-albums';
+
+if (username) {
+    console.log("Username found:", username);
+    // Use the username for your API call
+    userAlbumsApiUrl = `apiendpoint/interactions/${username}`;
+} else {
+    console.log("No user found in local storage");
+}
+
+// Fetch user albums
+function fetchUserAlbums() {
+    console.log("Fetching user albums from:", userAlbumsApiUrl);
+    fetch(userAlbumsApiUrl)
+        .then(response => response.json())
+        .then(data => {
+            console.log("User albums data:", data);  // Log the data to console
+            if (data.album_ids) {
+                displayUserAlbums(data.album_ids);
+                fetchSuggestedAlbums(data.album_ids);
+            }
+        })
+        .catch(error => console.error('Error fetching user albums:', error));
+}
+
+// Display the albums the user has listened to
+function displayUserAlbums(albumIds) {
+    console.log("Displaying user albums:", albumIds);  // Log the album IDs to console
+    //const userAlbumsDiv = document.getElementById('user-albums');
+    //userAlbumsDiv.innerHTML = '';
+    // albumIds.forEach(albumId => {
+    //     const albumDiv = document.createElement('div');
+    //     albumDiv.classList.add('album-card');
+    //     albumDiv.innerHTML = `
+    //         <h3>Album ID: ${albumId}</h3>
+    //     `;
+    //     userAlbumsDiv.appendChild(albumDiv);
+    // });
+}
+
+// Fetch suggested albums from the same genre
+function fetchSuggestedAlbums(albumIds) {
+    console.log("Fetching suggested albums for:", albumIds);  // Log album IDs used for suggestions
+    fetch(suggestedAlbumsApiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ album_ids: albumIds })
+        
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Suggested albums data:", data);  // Log the suggested albums to console
+        if (data.albums) {
+            displaySuggestedAlbums(data.albums);
+        }
+    })
+    .catch(error => console.error('Error fetching suggested albums:', error));
+}
+
+// Display the suggested albums in the same genre
+function displaySuggestedAlbums(albums, username) {
+    console.log("Displaying suggested albums:", albums);  // Log the albums data to console
+    const suggestedAlbumsDiv = document.getElementById('suggested-albums');
+    suggestedAlbumsDiv.innerHTML = '';  // Clear previous albums
+    
+    albums.forEach(album => {
+        const albumDiv = document.createElement('div');
+        albumDiv.classList.add('album-card');
+        
+        // Create image element with click functionality
+        const imageElement = document.createElement("img");
+        imageElement.src = album.album_art_url;  // Use the correct property for album art URL
+        imageElement.alt = `${album.title} Cover`;  // Set alt text to the album title
+        imageElement.style.cursor = "pointer";  // Change cursor to pointer for better UX
+
+        // On clicking the image, log interaction and navigate to the albumTracks page
+        imageElement.onclick = () => {
+            // Log the interaction by albumId and albumName
+            logAlbumInteraction(album.album_id, album.title);
+            
+            // Store the username in localStorage
+            localStorage.setItem("username", username);
+
+            // Navigate to the albumTracks page with the album_id in the URL
+            window.location.href = `albumTracks.html?albumId=${album.album_id}`;
+        };
+
+        // Append the image and other album details to the albumDiv
+        albumDiv.innerHTML = `
+            <h3>${album.title}</h3>
+            <p>by ${album.artist}</p>
+            <p>Genre: ${album.genre}</p>
+            <p>Tracks: ${album.tracks.map(track => track.title).join(', ')}</p>
+        `;
+
+        albumDiv.prepend(imageElement);  // Add the image at the top
+        suggestedAlbumsDiv.appendChild(albumDiv);  // Append albumDiv to the main container
+    });
+}
+
+
+// Fetch user albums if the username is found
+if (username) {
+    fetchUserAlbums();
+}
+// Toggle logout dropdown when clicking the username
+const usernameLink = document.getElementById("username-link");
+      const logoutDropdown = document.getElementById("logoutDropdown");
+
+      usernameLink.addEventListener("click", function (event) {
+        event.preventDefault();
+        logoutDropdown.style.display =
+          logoutDropdown.style.display === "block" ? "none" : "block";
+      });
+
+      // Logout functionality
+      const logoutButton = document.getElementById("logoutButton");
+      logoutButton.addEventListener("click", function () {
+        // Clear all local storage to log the user out completely
+        localStorage.clear();
+
+        // Redirect to login page
+        window.location.href = "login.html";
+      });
+    </script>
+  </body>
+</html>

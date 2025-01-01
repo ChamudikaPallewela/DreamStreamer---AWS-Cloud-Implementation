@@ -1,0 +1,126 @@
+body {
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+    background-image: url('../img/background.jpg'); /* Replace with your image path */
+    background-size: cover; /* Cover the entire page */
+    background-repeat: no-repeat; /* Prevent repeating */
+    background-position: center; /* Center the image */
+    background-attachment: fixed; /* Fixed background for parallax effect */
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center; /* Center container horizontally */
+    align-items: center; /* Center container vertically */
+    min-height: 100vh; /* Ensure full height */
+}
+
+/* Add a soft dark overlay to enhance text visibility */
+body::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.4); /* Slight dark overlay */
+    z-index: 1; /* Ensure overlay is on top of the background */
+}
+
+.container {
+    position: relative; /* Make sure container is above the overlay */
+    z-index: 2;
+    max-width: 400px;
+    padding: 30px;
+    background-color: rgba(255, 255, 255, 0.9); /* Semi-transparent background */
+    border-radius: 12px; /* Rounded corners */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2); /* Soft shadow */
+    text-align: center;
+}
+
+h2 {
+    color: #1c73e8; /* Blue heading color */
+    margin-bottom: 20px;
+    font-size: 24px; /* Larger heading */
+    font-weight: 700;
+}
+
+.form-control {
+    border-radius: 30px; /* More rounded input */
+    padding: 12px 18px; /* More padding for a better look */
+    font-size: 16px;
+    margin-bottom: 15px;
+    border: 1px solid #ddd; /* Light border */
+}
+
+.btn-primary {
+    background-image: linear-gradient(to right, #1c73e8, #155ab6); /* Gradient background */
+    border: none; /* Remove border */
+    border-radius: 30px; /* Rounded button */
+    font-size: 16px;
+    padding: 12px;
+    width: 100%;
+    color: #fff; /* White text */
+    cursor: pointer; /* Cursor pointer for buttons */
+    transition: background 0.3s ease; /* Smooth transition on hover */
+}
+
+.btn-primary:hover {
+    background-image: linear-gradient(to right, #155ab6, #1c73e8); /* Reverse gradient on hover */
+}
+
+.btn-secondary {
+    background-color: #e0e0e0;
+    border-color: #cfcfcf;
+    border-radius: 30px;
+    font-size: 16px;
+    padding: 12px;
+    width: 100%;
+    margin-top: 10px;
+    cursor: pointer; /* Cursor pointer for buttons */
+    transition: background 0.3s ease; /* Smooth transition on hover */
+}
+
+.btn-secondary:hover {
+    background-color: #d1d1d1;
+}
+
+#message {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 14px;
+    color: #333; /* Darker color for readability */
+}
+
+/* Position absolute elements should be z-indexed higher than the overlay */
+*:not(body)::before,
+*:not(body)::after {
+    z-index: 2;
+}
+h2 {
+    color: #1c73e8;
+    text-align: center;
+    margin-bottom: 20px;
+    font-weight: 700;
+}
+.form-control {
+    border-radius: 20px;
+    padding: 10px 15px;
+    font-size: 16px;
+}
+.btn-primary {
+    background-color: #1c73e8;
+    border-color: #1c73e8;
+    border-radius: 20px;
+    font-size: 16px;
+    padding: 10px;
+    width: 100%;
+}
+.btn-primary:hover {
+    background-color: #155ab6;
+    border-color: #155ab6;
+}
+.form-group {
+    margin-bottom: 15px;
+}
+.mt-4 {
+    margin-top: 1.5rem !important;
+}
